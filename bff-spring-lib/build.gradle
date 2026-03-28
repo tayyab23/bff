@@ -1,0 +1,103 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id 'org.springframework.boot' version '3.2.0' apply false
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'io.github.tayyab23'
+version = '0.1.0'
+
+java { sourceCompatibility = JavaVersion.VERSION_17 }
+
+dependencyManagement {
+    imports { mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.0" }
+}
+
+dependencies {
+    compileOnly 'org.springframework.boot:spring-boot-starter-web'
+    compileOnly 'org.springframework.boot:spring-boot-starter-security'
+    compileOnly 'org.springframework.boot:spring-boot-starter-actuator'
+    compileOnly 'io.micrometer:micrometer-core'
+    implementation 'org.springframework:spring-test'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.boot:spring-boot-starter-web'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
+
+java {
+    withJavadocJar()
+    withSourcesJar()
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'bff-spring-lib'
+
+            pom {
+                name = 'bff-recipe'
+                description = 'A Backend For Frontend aggregation library for Spring Boot'
+                url = 'https://github.com/tayyab23/bff'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'tayyab23'
+                        name = 'Tayyab Ahmed'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/tayyab23/bff.git'
+                    developerConnection = 'scm:git:ssh://github.com/tayyab23/bff.git'
+                    url = 'https://github.com/tayyab23/bff'
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'staging'
+            url = layout.buildDirectory.dir('staging-deploy')
+        }
+    }
+}
+
+signing {
+    useGpgCmd()
+    sign publishing.publications.mavenJava
+}
+
+tasks.withType(GenerateModuleMetadata).configureEach {
+    enabled = false
+}
+
+tasks.register('bundleForCentral', Zip) {
+    dependsOn 'publishMavenJavaPublicationToStagingRepository'
+    from layout.buildDirectory.dir('staging-deploy')
+    archiveFileName = 'bundle.zip'
+    destinationDirectory = layout.buildDirectory.dir('central-bundle')
+}
+
+tasks.register('publishToCentral', Exec) {
+    dependsOn 'bundleForCentral'
+    def bundlePath = layout.buildDirectory.file('central-bundle/bundle.zip').get().asFile.path
+    def user = findProperty('sonatypeUsername') ?: ''
+    def pass = findProperty('sonatypePassword') ?: ''
+    commandLine 'curl', '-s',
+        '--request', 'POST',
+        '--user', "${user}:${pass}",
+        '--form', "bundle=@${bundlePath}",
+        'https://central.sonatype.com/api/v1/publisher/upload?publishingType=AUTOMATIC'
+}
