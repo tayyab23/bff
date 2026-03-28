@@ -7,10 +7,13 @@ plugins {
 }
 
 group = 'io.github.tayyab23'
-version = '0.1.0'
+version = '0.1.1'
 
 java { sourceCompatibility = JavaVersion.VERSION_17 }
 
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add('-parameters')
+}
 dependencyManagement {
     imports { mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.0" }
 }
