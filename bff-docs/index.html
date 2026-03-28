@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Backend For Frontend — API Recipe Aggregator for Spring Boot</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --accent: #6c63ff;
+      --accent-light: #8b85ff;
+      --text: #e2e4f0;
+      --muted: #8b8fa8;
+      --code-bg: #13151f;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --sidebar-w: 240px;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      display: flex;
+    }
+
+    /* ── Sidebar ── */
+    nav {
+      width: var(--sidebar-w);
+      height: 100vh;
+      position: fixed;
+      top: 0; left: 0;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      padding: 2rem 0;
+      overflow-y: auto;
+      z-index: 100;
+    }
+
+    nav .logo {
+      padding: 0 1.5rem 1.5rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 1rem;
+    }
+
+    nav .logo span {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent-light);
+      letter-spacing: -0.02em;
+    }
+
+    nav .logo small {
+      display: block;
+      font-size: 0.7rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    nav a {
+      display: block;
+      padding: 0.35rem 1.5rem;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.82rem;
+      transition: color 0.15s;
+    }
+
+    nav a:hover, nav a.active { color: var(--text); }
+    nav a.active { border-left: 2px solid var(--accent); padding-left: calc(1.5rem - 2px); }
+
+    nav .nav-section {
+      font-size: 0.68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--accent-light);
+      padding: 1rem 1.5rem 0.25rem;
+    }
+
+    /* ── Main ── */
+    main {
+      margin-left: var(--sidebar-w);
+      width: calc(100% - var(--sidebar-w));
+      padding: 4rem 4rem 4rem 3rem;
+      transition: margin-left 0.3s ease, width 0.3s ease;
+    }
+
+    section { padding-top: 4rem; margin-top: -2rem; }
+    [id] { scroll-margin-top: 2rem; }
+
+    h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 1rem; }
+    h2 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 1rem; color: var(--text); }
+    h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--accent-light); }
+
+    p { color: var(--muted); margin-bottom: 1rem; }
+    p strong { color: var(--text); }
+
+    .hero-badge {
+      display: inline-block;
+      background: rgba(108,99,255,0.15);
+      color: var(--accent-light);
+      border: 1px solid rgba(108,99,255,0.3);
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.75rem;
+      margin-bottom: 1.25rem;
+      letter-spacing: 0.04em;
+    }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: 2rem;
+    }
+
+    .btn-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 3rem; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.55rem 1.25rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-outline { background: transparent; color: var(--text); border: 1px solid var(--border); }
+
+    /* ── Shared panel ── */
+    .panel, .stat, .card, .callout, details, .latency-scenario {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+
+    /* ── Stats row ── */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat {
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .stat .num { font-size: 1.3rem; font-weight: 800; color: var(--accent-light); flex-shrink: 0; }
+    .stat .label { font-size: 0.75rem; color: var(--muted); line-height: 1.3; }
+
+    @media (max-width: 480px) {
+      .stats { grid-template-columns: repeat(3, 1fr); gap: 0.4rem; }
+      .stat { flex-direction: column; align-items: flex-start; gap: 0.2rem; padding: 0.6rem; }
+      .stat .num { font-size: 1.1rem; }
+      .stat .label { font-size: 0.68rem; }
+    }
+
+    /* ── Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .card {
+      border-radius: 10px;
+      padding: 1.25rem;
+    }
+
+    .card h3 { margin-bottom: 0.4rem; }
+    .card p { font-size: 0.83rem; margin: 0; }
+    .card ul { list-style: disc; padding-left: 1.2rem; margin: 0; }
+    .card li { font-size: 0.83rem; color: var(--muted); line-height: 1.7; }
+
+    /* ── Code blocks ── */
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 1.5rem;
+      overflow: hidden;
+    }
+
+    .code-block .code-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.75rem;
+      color: var(--muted);
+    }
+
+    .code-block .code-header .lang {
+      background: rgba(108,99,255,0.15);
+      color: var(--accent-light);
+      padding: 0.1rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.7rem;
+      font-weight: 600;
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      border-radius: 4px;
+      padding: 0.1rem 0.5rem;
+      font-size: 0.7rem;
+      cursor: pointer;
+      margin-left: 0.5rem;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .copy-btn:hover { color: var(--text); border-color: var(--accent); }
+
+    .code-block pre {
+      margin: 0 !important;
+      padding: 1.25rem !important;
+      background: transparent !important;
+      font-size: 0.82rem !important;
+      line-height: 1.6 !important;
+      overflow-x: auto;
+    }
+
+    /* ── Step list ── */
+    .steps { counter-reset: step; list-style: none; margin-bottom: 2rem; }
+    .steps li {
+      counter-increment: step;
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .steps li::before {
+      content: counter(step);
+      min-width: 28px;
+      height: 28px;
+      background: rgba(108,99,255,0.2);
+      color: var(--accent-light);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.78rem;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 0.1rem;
+    }
+    .steps li .step-body h3 { margin-bottom: 0.25rem; }
+    .steps li .step-body p { font-size: 0.85rem; margin: 0; }
+
+    /* ── Table ── */
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.83rem; }
+    th { text-align: left; padding: 0.6rem 0.75rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+    td:first-child { color: var(--text); font-family: monospace; font-size: 0.8rem; }
+
+    /* ── Callout ── */
+    .callout {
+      border-left-width: 3px;
+      border-left-color: var(--accent);
+      background: rgba(108,99,255,0.07);
+      border-radius: 0 8px 8px 0;
+      padding: 0.9rem 1.1rem;
+      margin-bottom: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+    .callout strong { color: var(--text); }
+
+    /* ── FAQ ── */
+    details {
+      margin-bottom: 0.5rem;
+    }
+    details summary {
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.9rem;
+      color: var(--text);
+      list-style: none;
+    }
+    details summary::before { content: '▸ '; color: var(--accent); }
+    details[open] summary::before { content: '▾ '; }
+    details p {
+      padding: 0 1rem 0.85rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+
+    code:not([class]) {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.1em 0.4em;
+      font-size: 0.82em;
+      color: var(--accent-light);
+    }
+
+    /* ── Drawer toggle (pure CSS) ── */
+    .drawer-toggle { display: none; }
+
+    .drawer-toggle-label {
+      position: fixed;
+      top: 1rem;
+      left: calc(var(--sidebar-w) + 0.5rem);
+      z-index: 200;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      width: 32px; height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 0.9rem;
+      transition: left 0.3s ease;
+    }
+
+    .drawer-toggle-label::after { content: '✕'; }
+    .drawer-toggle:checked ~ .drawer-toggle-label::after { content: '☰'; }
+
+    /* Sidebar default: open on desktop */
+    nav {
+      transform: translateX(0);
+      transition: transform 0.3s ease;
+    }
+
+    main { transition: margin-left 0.3s ease, width 0.3s ease; }
+
+    /* Desktop: checked = closed */
+    .drawer-toggle:checked ~ nav {
+      transform: translateX(calc(-1 * var(--sidebar-w)));
+    }
+
+    .drawer-toggle:checked ~ .drawer-toggle-label {
+      left: 0.5rem;
+    }
+
+    .drawer-toggle:checked ~ main {
+      margin-left: 0;
+      width: 100%;
+    }
+
+    @media (max-width: 768px) {
+      /* Mobile: closed by default, checkbox logic inverted */
+      nav { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      main { margin-left: 0; width: 100%; padding: 2rem 1.25rem; padding-top: 4rem; }
+      .drawer-toggle-label { left: 0.5rem; }
+      .drawer-toggle-label::after { content: '☰'; }
+
+      .drawer-toggle:checked ~ nav { transform: translateX(0); }
+      .drawer-toggle:checked ~ .drawer-toggle-label { left: calc(var(--sidebar-w) + 0.5rem); }
+      .drawer-toggle:checked ~ .drawer-toggle-label::after { content: '✕'; }
+      .drawer-toggle:checked ~ main { margin-left: 0; width: 100%; }
+
+      .card-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Latency comparison ── */
+    .latency-compare { display: flex; flex-direction: column; gap: 1.5rem; margin: 1.5rem 0; }
+    .latency-scenario { border-radius: 10px; padding: 1.25rem; overflow-x: auto; }
+    .latency-label { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .latency-tag { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .latency-tag-slow { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .latency-tag-fast { background: rgba(74,222,128,0.15); color: var(--success); }
+    .latency-rows { display: flex; flex-direction: column; gap: 0.35rem; }
+    .latency-row { display: flex; align-items: center; height: 26px; }
+    .latency-row-label { font-size: 0.72rem; color: var(--muted); width: 140px; flex-shrink: 0; text-align: right; padding-right: 0.75rem; }
+    .latency-track { flex: 1; position: relative; height: 22px; }
+    .latency-bar { position: absolute; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #fff; font-weight: 600; white-space: nowrap; }
+    .latency-total { margin-top: 0.75rem; font-size: 0.85rem; color: var(--muted); text-align: right; }
+    .latency-total strong { color: var(--text); }
+    .latency-note { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; font-style: italic; }
+
+  </style>
+</head>
+<body>
+
+<input type="checkbox" id="drawer-toggle" class="drawer-toggle">
+<label for="drawer-toggle" class="drawer-toggle-label"></label>
+
+<nav id="sidebar">
+  <div class="logo">
+    <span>👨‍🍳 bff-recipe</span>
+    <small>v0.1.0</small>
+  </div>
+  <div id="nav-links"></div>
+</nav>
+<main>
+
+  <!-- ── OVERVIEW ── -->
+  <section id="overview" data-nav data-nav-link="What &amp; Why">
+    <div class="hero-badge">Spring Boot 3.x · Java 17 · Zero Config</div>
+    <h1>bff-recipe</h1>
+    <p style="font-size: 1rem; color: var(--muted); margin-top: -0.5rem; margin-bottom: 1.25rem;">A Backend For Frontend aggregation library</p>
+    <p class="hero-sub">
+      API producers build endpoints the way they want. Consumers compose them the way they need.
+      No tug of war between team priorities. No custom aggregation endpoints. No wasted round trips.
+    </p>
+    <p style="font-size: 0.95rem; color: var(--text); margin-bottom: 2rem;">
+      Add one annotation to your Spring controllers you wish to aggregate. Send one request from your client and get your aggregated data back in one response.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <h3>Client-side team needs</h3>
+        <ul>
+          <li>One request per page</li>
+          <li>All the data the UI needs in one request</li>
+          <li>Fast, parallel data loading</li>
+          <li>Ship without waiting on backend</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Service team needs</h3>
+        <ul>
+          <li>Clean, single-purpose APIs</li>
+          <li>Independent deployability</li>
+          <li>No custom endpoints for each client</li>
+          <li>Ownership of service boundaries</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><div class="num">1</div><div class="label">dependency to add</div></div>
+      <div class="stat"><div class="num">0</div><div class="label">business logic in the aggregation layer</div></div>
+      <div class="stat"><div class="num">N→1</div><div class="label">network round trips</div></div>
+    </div>
+
+    <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem;">
+      You get a <strong>Spring Boot starter</strong>, a <strong>TypeScript client package</strong>, and built-in <strong>discovery &amp; validation endpoints</strong>.
+    </p>
+
+    <div class="btn-row">
+      <a class="btn btn-primary" href="#quickstart">Get Started</a>
+      <a class="btn btn-outline" href="https://github.com/tayyab23/bff" target="_blank">GitHub ↗</a>
+      <a class="btn btn-outline" href="#example">View Example App ↗</a>
+    </div>
+
+    <h2 id="how" data-nav-link="How It Works" style="margin-bottom: 0.75rem; margin-top: 2rem;">How it works</h2>
+    <p>Two things happen. Backend adds one annotation per API. Frontend sends one JSON request.</p>
+
+    <div class="card-grid" style="margin-top: 1rem;">
+      <div class="code-block" style="margin-bottom: 0;">
+        <div class="code-header"><span>Backend — annotate existing endpoints</span><span class="lang">java</span></div>
+        <pre><code class="language-java">@BffIngredient(recipe = "payments", name = "getAccount")
+@GetMapping("/api/accounts/{accountId}")
+public ResponseEntity&lt;Account&gt; getAccount(...) { }
+
+@BffIngredient(recipe = "payments", name = "getInvoices")
+@GetMapping("/api/invoices")
+public ResponseEntity&lt;InvoiceList&gt; getInvoices(...) { }
+
+@BffIngredient(recipe = "payments", name = "getPaymentMethods")
+@GetMapping("/api/payment-methods")
+public ResponseEntity&lt;PaymentMethodList&gt; getPaymentMethods(...) { }
+
+@BffIngredient(recipe = "payments", name = "submitPayment")
+@PostMapping("/api/payments")
+public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
+      </div>
+      <div class="code-block" style="margin-bottom: 0;">
+        <div class="code-header"><span>Frontend — compose a recipe</span><span class="lang">json</span></div>
+        <pre><code class="language-json">POST /bff/payments
+{
+  "ingredients": [
+    { "id": "getAccount",
+      "params": { "accountId": "acc-123" } },
+    { "id": "getInvoices",
+      "map": { "query": {
+        "billingGroupId":
+          "getAccount::body::${billingGroupId}"
+      }}},
+    { "id": "getPaymentMethods",
+      "map": { "query": {
+        "customerId":
+          "getAccount::body::${customerId}"
+      }}}
+  ]
+}</code></pre>
+      </div>
+    </div>
+
+    <p style="margin-top: 1rem;">
+      The framework figures out the dependency graph, runs independent ingredients in parallel, propagates auth, and returns everything in one response. No aggregation logic to write. No new endpoints to maintain.
+    </p>
+
+    <!-- ── Latency comparison ── -->
+    <h3 id="latency" style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text);">Example of client-side latency</h3>
+    <p>A payments page needs account info, invoices, and payment methods. Assume 700ms network latency per round trip and 100ms server processing. A good frontend team will parallelize what it can — but the dependency chain still forces sequential hops:</p>
+
+    <div class="latency-compare">
+      <div class="latency-scenario latency-before">
+        <div class="latency-label">Without bff-recipe <span class="latency-tag latency-tag-slow">3 round trips, best case</span></div>
+        <div class="latency-rows">
+          <div class="latency-row">
+            <span class="latency-row-label">getAccount</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:0; width:25%; background:#ef4444;">800ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">getInvoices</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:25%; width:25%; background:#ef4444;">∥ 800ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">getPaymentMethods</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:25%; width:25%; background:#ef4444;">∥ 800ms</div>
+            </div>
+          </div>
+          <div class="latency-row" style="margin-top: 0.5rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+            <span class="latency-row-label">submitPayment</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:50%; width:25%; background:#f59e0b;">800ms (user action)</div>
+            </div>
+          </div>
+        </div>
+        <div class="latency-total">Page load: <strong>1,600ms</strong> + 800ms user action</div>
+        <div class="latency-note">A smart frontend parallelizes getInvoices and getPaymentMethods — but both need getAccount first. That's 2 sequential round trips the client can't avoid, plus a third for the payment submission.</div>
+      </div>
+
+      <div class="latency-scenario latency-after">
+        <div class="latency-label">With bff-recipe <span class="latency-tag latency-tag-fast">1 round trip + 1 user action</span></div>
+        <div class="latency-rows">
+          <div class="latency-row">
+            <span class="latency-row-label">network ↗</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:0; width:18%; background:var(--accent);">350ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">getAccount</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:18%; width:3.5%; background:var(--success);">100ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">getInvoices</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:21.5%; width:3.5%; background:var(--success);">∥ 100ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">getPaymentMethods</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:21.5%; width:3.5%; background:var(--success);">∥ 100ms</div>
+            </div>
+          </div>
+          <div class="latency-row">
+            <span class="latency-row-label">network ↙</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:25%; width:18%; background:var(--accent);">350ms</div>
+            </div>
+          </div>
+          <div class="latency-row" style="margin-top: 0.5rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
+            <span class="latency-row-label">submitPayment</span>
+            <div class="latency-track">
+              <div class="latency-bar" style="left:43%; width:25%; background:#f59e0b;">800ms (user action)</div>
+            </div>
+          </div>
+        </div>
+        <div class="latency-total">Page load: <strong>900ms</strong> + 800ms user action <span style="color: var(--success); font-weight: 700; margin-left: 0.5rem;">— 45% faster</span></div>
+        <div class="latency-note">Same 4 APIs, same dependency chain — but the sequential hops happen server-side with zero network cost. The client pays for one round trip to load the page, plus one for the user-initiated payment.</div>
+      </div>
+    </div>
+
+    <p style="margin-top: 1.5rem;">
+      Even with a smart frontend parallelizing what it can, the dependency chain forces multiple round trips. With bff-recipe, the same chain resolves server-side — the client sends one request and gets everything back.
+    </p>
+
+  </section>
+  <section id="quickstart" data-nav="Getting Started">
+    <h2>Quick Start</h2>
+
+    <ol class="steps">
+      <li>
+        <div class="step-body">
+          <h3>Add the starter to your existing Spring Boot project.</h3>
+        </div>
+      </li>
+    </ol>
+
+    <div class="code-block">
+      <div class="code-header"><span>build.gradle</span><span class="lang">groovy</span></div>
+      <pre><code class="language-groovy">dependencies {
+    implementation 'io.github.tayyab23:bff-spring-lib:0.1.0'
+}</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>pom.xml</span><span class="lang">xml</span></div>
+      <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;io.github.tayyab23&lt;/groupId&gt;
+    &lt;artifactId&gt;bff-spring-lib&lt;/artifactId&gt;
+    &lt;version&gt;0.1.0&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+    </div>
+
+    <ol class="steps" style="counter-reset: step 1">
+      <li>
+        <div class="step-body">
+          <h3>Annotate any controller.</h3>
+        </div>
+      </li>
+    </ol>
+    <div class="code-block">
+      <div class="code-header"><span class="lang">java</span></div>
+      <pre><code class="language-java">@BffIngredient
+@GetMapping("/api/accounts/{accountId}")
+public ResponseEntity&lt;Account&gt; getAccount(@PathVariable String accountId) { ... }</code></pre>
+    </div>
+
+    <ol class="steps" style="counter-reset: step 2">
+      <li>
+        <div class="step-body">
+          <h3>Test your new bff.</h3>
+        </div>
+      </li>
+    </ol>
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "ingredients": [
+    { "id": "getAccount", "params": { "accountId": "acc-123" } }
+  ]
+}</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>Response — 200 OK</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "executionOrder": ["getAccount"],
+  "results": {
+    "getAccount": {
+      "status": 200,
+      "body": { "accountId": "acc-123", "name": "BFF" }
+    }
+  }
+}</code></pre>
+    </div>
+
+    <div class="callout">
+      That's it. <a href="#config" style="color: var(--accent-light);">Configuration</a> is entirely optional.
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── COMPARISON ── -->
+  <section id="comparison">
+    <h2>How it compares</h2>
+    <p>There are real alternatives. bff-recipe indexes on <strong>minimum setup cost</strong> and <strong>maximum API delivery speed</strong> — the shortest path from existing REST endpoints to a composed frontend response. Here's an honest look at the trade-offs.</p>
+
+    <table>
+      <tr>
+        <th>Approach</th>
+        <th>Setup cost</th>
+        <th>Existing APIs</th>
+        <th>Frontend control</th>
+        <th>Trade-off</th>
+      </tr>
+      <tr style="background: rgba(108, 99, 255, 0.08); border-left: 3px solid var(--accent);">
+        <td><strong>bff-recipe</strong></td>
+        <td>1 dependency, 1 annotation</td>
+        <td>Unchanged — annotate and go</td>
+        <td>Full — compose recipes at will</td>
+        <td>Spring Boot only. No field-level selection (you get the full response body per ingredient).</td>
+      </tr>
+      <tr>
+        <td><strong>GraphQL</strong> (e.g. DGS, Spring GraphQL)</td>
+        <td>Schema + resolvers + data loaders</td>
+        <td>Rewrite as resolvers</td>
+        <td>Full — query exactly the fields you need</td>
+        <td>Powerful, but requires rethinking API contracts. Resolver complexity grows with the graph. Best when you need field-level granularity.</td>
+      </tr>
+      <tr>
+        <td><strong>API Gateway composition</strong> (e.g. Kong, AWS API GW)</td>
+        <td>Gateway config + orchestration rules</td>
+        <td>Unchanged — route externally</td>
+        <td>Limited — gateway owns the composition</td>
+        <td>Good for simple fan-out. Dependency chains and data wiring between calls get complex fast. Adds infrastructure.</td>
+      </tr>
+      <tr>
+        <td><strong>Custom BFF endpoints</strong></td>
+        <td>Write a new controller per screen</td>
+        <td>Called internally</td>
+        <td>None — backend owns every composition</td>
+        <td>Maximum flexibility, but backend becomes a bottleneck for every frontend change. Aggregation logic accumulates.</td>
+      </tr>
+      <tr>
+        <td><strong>Client-side orchestration</strong></td>
+        <td>Zero backend changes</td>
+        <td>Unchanged</td>
+        <td>Full</td>
+        <td>What most teams do today. Works until dependency chains force sequential round trips across the network (the latency problem above).</td>
+      </tr>
+    </table>
+
+    <div class="callout">
+      <strong>bff-recipe is not a replacement for GraphQL.</strong> If your team needs field-level selection, subscriptions, or a unified graph across services — use GraphQL. bff-recipe is for teams that want to keep their REST APIs exactly as they are and just eliminate the round-trip tax.
+    </div>
+    <p style="font-size: 0.85rem;">Still have questions about the design trade-offs? <a href="#faq" style="color: var(--accent-light);">See the FAQ →</a></p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── INSTALL ── -->
+
+  <!-- ANNOTATION -->
+  <section id="annotation" data-nav="Concepts">
+    <h2>@BffIngredient</h2>
+    <p>The only annotation you need. Place it on any mapped controller method — it keeps working independently as before.</p>
+    <div class="code-block">
+      <div class="code-header"><span>usage</span><span class="lang">java</span></div>
+      <pre><code class="language-java">@BffIngredient(
+    recipe         = {"payments", "dashboard"},
+    name           = "getAccount",
+    forwardHeaders = {"Authorization"},
+    customHeaders  = {"X-Feature-Flag"},
+    headerMapping  = {"INHERIT"}
+)
+@GetMapping("/api/accounts/{accountId}")
+public ResponseEntity&lt;Account&gt; getAccount(
+        @PathVariable String accountId,
+        @RequestHeader("Authorization") String authorization) { ... }</code></pre>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Annotation attributes</h3>
+    <table>
+      <tr><th>Attribute</th><th>Default</th><th>Also in yml?</th><th>Description</th></tr>
+      <tr><td>recipe</td><td><code>""</code></td><td>—</td><td>Recipe name(s). Empty = default endpoint at <code>POST /bff</code>. Named recipes get <code>POST /bff/{name}</code>.</td></tr>
+      <tr><td>name</td><td>method name</td><td>—</td><td>ID used in recipe requests to reference this ingredient. Must be unique within a recipe.</td></tr>
+      <tr><td>forwardHeaders</td><td><code>INHERIT</code></td><td>Yes</td><td>Which original request headers to forward. <code>{"*"}</code> all, <code>{}</code> none, list, or regex. Annotation overrides yml.</td></tr>
+      <tr><td>customHeaders</td><td><code>INHERIT</code></td><td>Yes</td><td>Which custom headers the client may inject. Annotation overrides yml.</td></tr>
+      <tr><td>headerMapping</td><td><code>INHERIT</code></td><td>Yes</td><td>Whether prior ingredients' response headers can be mapped in. Annotation overrides yml.</td></tr>
+    </table>
+
+    <h3 style="margin-top: 1.5rem;">Where each setting lives</h3>
+    <p>Settings can be specified at multiple levels. Each level can only <strong>narrow</strong> what the level above allows — never widen it.</p>
+    <table>
+      <tr><th>Setting</th><th>yml (global)</th><th>yml (per-recipe)</th><th>@BffIngredient</th><th>Recipe JSON (client request)</th></tr>
+      <tr><td>enabled</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>base-path</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>recipe name</td><td>—</td><td>—</td><td>✓</td><td>— (URL)</td></tr>
+      <tr><td>ingredient name</td><td>—</td><td>—</td><td>✓</td><td>— (id field)</td></tr>
+      <tr><td>ingredient-timeout-ms</td><td>✓</td><td>✓ overrides</td><td>—</td><td>—</td></tr>
+      <tr><td>recipe-timeout-ms</td><td>✓</td><td>✓ overrides</td><td>—</td><td>—</td></tr>
+      <tr><td>max-ingredients</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>parallel-threads</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
+      <tr><td>forward headers</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
+      <tr><td>custom headers</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
+      <tr><td>header mapping</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
+      <tr><td>debug</td><td>✓</td><td>—</td><td>—</td><td>✓ requests</td></tr>
+      <tr><td>failFast</td><td>—</td><td>—</td><td>—</td><td>✓</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>Override chain:</strong> Global yml → Per-recipe yml → <code>@BffIngredient</code> annotation → Recipe JSON (client request). Each level narrows the one above. The global blocklist always wins regardless of what any other level says.
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- CONFIG -->
+  <section id="config">
+    <h2>Configuration</h2>
+    <p>All settings live under <code>bff-recipe</code> in <code>application.yml</code>. <strong>Configuration is entirely optional</strong> — the defaults work out of the box. Use it to tune timeouts, enable discovery endpoints, or set header policies. Per-recipe overrides narrow the global ceiling.</p>
+    <div class="code-block">
+      <div class="code-header"><span>application.yml — full reference (all optional)</span><span class="lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code class="language-yaml">bff-recipe:
+  enabled: true
+  base-path: "/bff"
+  schema:
+    enabled: false          # GET /bff/{recipe}/schema
+  validate:
+    enabled: false          # POST /bff/{recipe}/validate
+  debug:
+    enabled: false
+    mask-headers: ["Authorization", "X-Api-Key", "Cookie"]
+  execution:
+    parallel-threads: 10
+    ingredient-timeout-ms: 5000
+    recipe-timeout-ms: 15000
+    max-ingredients: 10
+  headers:
+    forward:
+      enabled: true
+      blocked: ["Host", "Content-Length", "Connection"]
+    custom:
+      enabled: false
+      blocked: ["Authorization", "Host"]
+    mapping:
+      enabled: false
+      blocked-sources: ["Set-Cookie"]
+  recipes:
+    payments:
+      ingredient-timeout-ms: 3000
+      headers:
+        custom:
+          enabled: true
+          allowed: ["X-Idempotency-Key", "X-Feature-Flag"]</code></pre>
+    </div>
+    <div class="callout"><strong>Zero config is valid.</strong> Add the dependency, annotate your controllers, and the defaults handle the rest. Everything above is optional tuning.</div>
+    <div class="callout"><strong>Headers are case-insensitive.</strong> <code>"Authorization"</code>, <code>"authorization"</code>, and <code>"AUTHORIZATION"</code> all match. Original casing is preserved when forwarding.</div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- EXECUTION -->
+  <section id="execution">
+    <h2>Execution Model</h2>
+    <p>The framework builds a DAG from your recipe, topologically sorts it into levels, and runs each level in parallel.</p>
+    <div class="code-block">
+      <div class="code-header"><span>execution levels example</span><span class="lang">text</span></div>
+      <pre><code>Level 0: [getAccount]                        ← runs alone
+Level 1: [getInvoices, getPaymentMethods]    ← parallel (both depend on getAccount)
+Level 2: [submitPayment]                     ← runs alone (depends on both above)</code></pre>
+    </div>
+    <p>Dependencies are inferred from <code>::</code> expressions automatically. Use <code>dependsOn</code> only for ordering without data flow.</p>
+    <div class="callout"><strong>Auth is always propagated.</strong> The Spring <code>SecurityContext</code> is forwarded to every ingredient. Not configurable — it's a security invariant.</div>
+    <table>
+      <tr><th>failFast</th><th>Behaviour on failure</th></tr>
+      <tr><td>false (default)</td><td>Skip dependents (422). Continue independent ingredients.</td></tr>
+      <tr><td>true</td><td>Abort all remaining. Already-completed results still returned.</td></tr>
+    </table>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- MIDDLEWARE -->
+  <section id="middleware">
+    <h2>Middleware &amp; Security</h2>
+    <p>Every ingredient dispatches through Spring's full MVC pipeline — not a shortcut, not a direct method call. This means your existing middleware applies per-ingredient, automatically:</p>
+
+    <table>
+      <tr><th>Concern</th><th>Where it lives</th><th>Applies to recipes?</th></tr>
+      <tr><td>Authentication</td><td>Your Spring Security filter chain</td><td>Yes — SecurityContext propagated to each ingredient</td></tr>
+      <tr><td>Authorization</td><td><code>@PreAuthorize</code>, <code>@Secured</code>, or filter</td><td>Yes — each ingredient is independently authorized</td></tr>
+      <tr><td>Rate limiting</td><td>Your interceptor or filter</td><td>Yes — each dispatch hits your rate limiter</td></tr>
+      <tr><td>Validation</td><td><code>@Valid</code>, <code>@Validated</code></td><td>Yes — Bean Validation runs per ingredient</td></tr>
+      <tr><td>Logging / audit</td><td>Your interceptors</td><td>Yes — each ingredient is a full request</td></tr>
+    </table>
+
+    <div class="callout">
+      <strong>This is intentional.</strong> The aggregation layer has zero business logic — it's a recipe executor, not a controller. All security, validation, and throttling stay where they belong: on the individual APIs. If <code>getAccount</code> requires <code>ROLE_ADMIN</code>, it still requires <code>ROLE_ADMIN</code> when called through a recipe.
+    </div>
+
+    <p>Think of it as handing the backend a shopping list. The backend walks through the store, picks up each item (hitting every checkpoint along the way), and brings it all back in one bag.</p>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- HEADERS -->
+  <section id="headers">
+    <h2>Header System</h2>
+    <p>Three sources merged per ingredient, in precedence order. Server policy always wins over client intent.</p>
+    <table>
+      <tr><th>Source</th><th>Precedence</th><th>Description</th></tr>
+      <tr><td>forwarded</td><td>Lowest</td><td>Headers from the original BFF request</td></tr>
+      <tr><td>mapped</td><td>Middle</td><td>Headers from a previous ingredient's response</td></tr>
+      <tr><td>custom</td><td>Highest</td><td>Static headers in the recipe request</td></tr>
+    </table>
+    <div class="code-block">
+      <div class="code-header"><span>per-ingredient header config</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "id": "submitPayment",
+  "headers": {
+    "forward": true,
+    "forwardOnly": ["Authorization"],
+    "custom": { "X-Idempotency-Key": "idem-abc-123" },
+    "mappings": { "getAccount.X-Trace-Id": "X-Upstream-Trace" }
+  }
+}</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- REQUEST FORMAT -->
+  <section id="request" data-nav="Recipe Format">
+    <h2>Request Format</h2>
+    <p>Send a <code>POST</code> to <code>/bff/{recipe}</code>. The URL selects the recipe — no need to specify it in the body.</p>
+
+    <div class="callout">
+      <strong>The server always wins.</strong> The recipe JSON can request header forwarding, custom headers, and debug info — but the backend configuration (yml + annotation) sets the ceiling. The client can only narrow what the server allows, never widen it. If the server blocks <code>Authorization</code> as a custom header, the client can't inject it regardless of what the JSON says.
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff/payments</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "debug": false,
+  "failFast": false,
+  "headers": { "forward": true, "forwardOnly": ["Authorization"] },
+  "ingredients": [
+    {
+      "id": "getAccount",
+      "params": { "accountId": "acc-123" }
+    },
+    {
+      "id": "getInvoices",
+      "map": {
+        "query": {
+          "billingGroupId": "getAccount::body::${billingGroupId}",
+          "limit": 10
+        }
+      }
+    },
+    {
+      "id": "submitPayment",
+      "dependsOn": ["getInvoices"],
+      "map": {
+        "body": {
+          "accountId": "getAccount::body::${accountId}",
+          "invoiceId": "getInvoices::body::${items[0].id}",
+          "amount":    "getInvoices::body::${items[0].amount}",
+          "currency":  "USD",
+          "paymentMethodId": "pm-visa-4242"
+        }
+      },
+      "headers": {
+        "custom": { "X-Idempotency-Key": "idem-abc-123" }
+      }
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Request fields &amp; what the server can override</h3>
+    <table>
+      <tr><th>Field</th><th>Type</th><th>Default</th><th>Server can override?</th></tr>
+      <tr><td>debug</td><td>boolean</td><td>false</td><td>Yes — ignored if <code>debug.enabled: false</code> in yml</td></tr>
+      <tr><td>failFast</td><td>boolean</td><td>false</td><td>No — client controls this</td></tr>
+      <tr><td>headers.forward</td><td>boolean</td><td>true</td><td>Yes — server <code>forward.enabled: false</code> wins</td></tr>
+      <tr><td>headers.forwardOnly</td><td>string[]</td><td>all allowed</td><td>Yes — server blocklist strips disallowed headers</td></tr>
+      <tr><td>ingredients[].id</td><td>string</td><td>required</td><td>No — must match a registered <code>@BffIngredient</code> name</td></tr>
+      <tr><td>ingredients[].params</td><td>object</td><td>null</td><td>No</td></tr>
+      <tr><td>ingredients[].body</td><td>any</td><td>null</td><td>No</td></tr>
+      <tr><td>ingredients[].map</td><td>object</td><td>null</td><td>No — but referenced fields are validated</td></tr>
+      <tr><td>ingredients[].dependsOn</td><td>string[]</td><td>inferred</td><td>No — merged with inferred deps from map</td></tr>
+      <tr><td>ingredients[].headers.custom</td><td>object</td><td>null</td><td>Yes — server <code>custom.enabled</code>, <code>custom.blocked</code>, and <code>custom.allowed</code> filter these</td></tr>
+      <tr><td>ingredients[].headers.mappings</td><td>object</td><td>null</td><td>Yes — server <code>mapping.enabled</code> and <code>blocked-sources</code> filter these</td></tr>
+    </table>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- EXPRESSIONS -->
+  <section id="expressions">
+    <h2>Expressions &amp; Mapping</h2>
+    <p>Values in the <code>map</code> block are either a <strong>reference</strong> (contains <code>::</code>) or a <strong>literal</strong> (no <code>::</code>).</p>
+    <table>
+      <tr><th>Expression</th><th>Meaning</th></tr>
+      <tr><td>ingredientName::body::${field}</td><td>Field from a prior ingredient's response body</td></tr>
+      <tr><td>ingredientName::body::${a.b.c}</td><td>Nested field via dot notation</td></tr>
+      <tr><td>ingredientName::body::${items[0].id}</td><td>Array index access</td></tr>
+      <tr><td>ingredientName::header::${X-Trace-Id}</td><td>Header from a prior ingredient's response</td></tr>
+      <tr><td>"json" / 42 / true</td><td>Literal — passed through as-is</td></tr>
+    </table>
+    <div class="callout"><strong>No N+1.</strong> Array iteration (<code>$foreach</code>, <code>[*]</code>) is intentionally not supported. If you need to call an API N times, build a batch endpoint.</div>
+    <div class="code-block">
+      <div class="code-header"><span>map block — all target locations</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"map": {
+  "path":  { "accountId": "getAccount::body::${accountId}" },
+  "query": { "billingGroupId": "getAccount::body::${billingGroupId}", "limit": 20 },
+  "body":  { "invoiceId": "getInvoices::body::${items[0].id}", "note": "auto-pay" }
+}</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- RESPONSE -->
+  <section id="response">
+    <h2>Response Format</h2>
+    <table>
+      <tr><th>HTTP Status</th><th>Meaning</th></tr>
+      <tr><td>200</td><td>All ingredients succeeded</td></tr>
+      <tr><td>207</td><td>Mixed results — check each ingredient's status</td></tr>
+      <tr><td>400</td><td>Recipe itself is malformed (unknown ingredient, cycle, etc.)</td></tr>
+    </table>
+    <div class="code-block">
+      <div class="code-header"><span>response shape</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "executionOrder": ["getAccount", ["getInvoices", "getPaymentMethods"], "submitPayment"],
+  "results": {
+    "getAccount":        { "status": 200, "body": { "accountId": "acc-123", "plan": "PRO" } },
+    "getInvoices":       { "status": 200, "body": { "items": [...], "total": 249.99 } },
+    "getPaymentMethods": { "status": 403, "body": { "error": "AccessDenied" } },
+    "submitPayment":     { "status": 422, "body": { "error": "DependencyFailed", "message": "Skipped: dependency 'getPaymentMethods' failed" } }
+  }
+}</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ERRORS -->
+  <section id="errors">
+    <h2>Error Handling</h2>
+    <table>
+      <tr><th>Scenario</th><th>Status</th><th>Meaning</th></tr>
+      <tr><td>API returned an error</td><td>4xx/5xx</td><td>Ingredient ran, underlying API failed</td></tr>
+      <tr><td>Dependency failed</td><td>422</td><td>Ingredient skipped — input was incomplete</td></tr>
+      <tr><td>Unknown ingredient ID</td><td>400</td><td>Recipe rejected before execution</td></tr>
+      <tr><td>Circular dependency</td><td>400</td><td>Cycle path shown in error message</td></tr>
+      <tr><td>Too many ingredients</td><td>400</td><td>Exceeds <code>max-ingredients</code> limit</td></tr>
+    </table>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── WALKTHROUGH ── -->
+  <section id="walkthrough" data-nav="Reference">
+    <h2>Walkthrough</h2>
+    <p>A more detailed example — a payments page that needs account info, invoices, and payment methods composed into one request with dependency wiring.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="step-body">
+          <h3>Annotate your existing controllers</h3>
+          <p>Add <code>@BffIngredient</code> to the methods you want to compose. They keep working exactly as before.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="code-block">
+      <div class="code-header"><span>AccountController.java</span><span class="lang">java</span></div>
+      <pre><code class="language-java">@BffIngredient(recipe = "payments", name = "getAccount",
+               forwardHeaders = {"Authorization"})
+@GetMapping("/api/accounts/{accountId}")
+public ResponseEntity&lt;Account&gt; getAccount(
+        @PathVariable String accountId,
+        @RequestHeader("Authorization") String authorization) {
+    // your existing logic unchanged
+}</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>InvoiceController.java</span><span class="lang">java</span></div>
+      <pre><code class="language-java">@BffIngredient(recipe = "payments", name = "getInvoices",
+               forwardHeaders = {"Authorization"})
+@GetMapping("/api/invoices")
+public ResponseEntity&lt;InvoiceList&gt; getInvoices(
+        @RequestParam String billingGroupId,
+        @RequestHeader("Authorization") String authorization) {
+    // billingGroupId will be wired in from getAccount's response
+}</code></pre>
+    </div>
+
+    <ol class="steps" style="counter-reset: step 1">
+      <li>
+        <div class="step-body">
+          <h3>Send a recipe request from your frontend</h3>
+          <p>One POST to <code>/bff/payments</code>. The <code>::</code> syntax wires <code>getAccount</code>'s response into <code>getInvoices</code>'s query param.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff/payments</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "ingredients": [
+    {
+      "id": "getAccount",
+      "params": { "accountId": "acc-123" }
+    },
+    {
+      "id": "getInvoices",
+      "map": {
+        "query": {
+          "billingGroupId": "getAccount::body::${billingGroupId}"
+        }
+      }
+    },
+    {
+      "id": "getPaymentMethods",
+      "map": {
+        "query": {
+          "customerId": "getAccount::body::${customerId}"
+        }
+      }
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <ol class="steps" style="counter-reset: step 2">
+      <li>
+        <div class="step-body">
+          <h3>Get everything back in one response</h3>
+          <p><code>getInvoices</code> and <code>getPaymentMethods</code> ran in parallel after <code>getAccount</code> completed.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="code-block">
+      <div class="code-header"><span>Response — HTTP 200</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "executionOrder": ["getAccount", ["getInvoices", "getPaymentMethods"]],
+  "results": {
+    "getAccount": {
+      "status": 200,
+      "body": { "accountId": "acc-123", "billingGroupId": "bg-acc-123", "customerId": "cust-acc-123", "name": "BFF" }
+    },
+    "getInvoices": {
+      "status": 200,
+      "body": { "items": [{ "id": "inv-001", "amount": 249.99, "status": "UNPAID" }], "total": 249.99 }
+    },
+    "getPaymentMethods": {
+      "status": 200,
+      "body": { "methods": [{ "id": "pm-visa-4242", "type": "CARD", "last4": "4242", "isDefault": true }] }
+    }
+  }
+}</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- TS CLIENT -->
+  <section id="ts-client">
+    <h2>TypeScript Client</h2>
+    <p>The package exports request/response types and an optional <code>fetch</code>-based client. Use the types with whatever HTTP client you already have — Axios, <code>ky</code>, generated SDK, or plain <code>fetch</code>.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>install</span><span class="lang">bash</span></div>
+      <pre><code class="language-bash">npm install @bff-recipe/client</code></pre>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Option 1 — Use the built-in client</h3>
+    <div class="code-block">
+      <div class="code-header"><span>built-in fetch client</span><span class="lang">typescript</span></div>
+      <pre><code class="language-typescript">import { createBffClient } from '@bff-recipe/client';
+
+// your own types — from OpenAPI codegen, Smithy, or hand-written
+interface Account { accountId: string; plan: string; billingGroupId: string; }
+interface InvoiceList { items: { id: string; amount: number }[]; total: number; }
+
+const bff = createBffClient('/bff');
+
+const res = await bff.execute&lt;{
+  getAccount: Account;
+  getInvoices: InvoiceList;
+}&gt;('payments', {
+  ingredients: [
+    { id: 'getAccount', params: { accountId: 'acc-123' } },
+    { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } }
+  ]
+});
+
+res.results.getAccount.body.accountId;        // ✓ string
+res.results.getInvoices.body.items[0].amount; // ✓ number</code></pre>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Option 2 — Types only, bring your own client</h3>
+    <div class="code-block">
+      <div class="code-header"><span>with Axios</span><span class="lang">typescript</span></div>
+      <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/client';
+import axios from 'axios';
+
+type PaymentsResult = { getAccount: Account; getInvoices: InvoiceList; };
+
+const { data } = await axios.post&lt;RecipeResponse&lt;PaymentsResult&gt;&gt;(
+  '/bff/payments',
+  { ingredients: [
+      { id: 'getAccount', params: { accountId: 'acc-123' } },
+      { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } }
+  ] } satisfies RecipeRequest
+);
+
+data.results.getAccount.body.plan; // ✓ typed</code></pre>
+    </div>
+
+    <div class="callout">
+      <strong>The types are the product.</strong> <code>RecipeRequest</code>, <code>RecipeResponse&lt;T&gt;</code>, and <code>IngredientResult&lt;T&gt;</code> give you full type safety regardless of HTTP client. The built-in <code>createBffClient</code> is just a convenience wrapper around <code>fetch</code>.
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- DISCOVERY -->
+  <section id="discovery">
+    <h2>Discovery Endpoints</h2>
+    <p>Both disabled by default. Enable per environment — they're protected by your existing Spring Security config.</p>
+    <div class="code-block">
+      <div class="code-header"><span>GET /bff/payments/schema</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "recipe": "payments",
+  "ingredients": {
+    "getAccount":        { "method": "GET",  "path": "/api/accounts/{accountId}", "responseType": "Account" },
+    "getInvoices":       { "method": "GET",  "path": "/api/invoices",             "responseType": "InvoiceList" },
+    "submitPayment":     { "method": "POST", "path": "/api/payments",             "responseType": "PaymentConfirmation" }
+  }
+}</code></pre>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff/payments/validate — on failure</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "valid": false,
+  "errors": [
+    { "ingredient": "unknownIngredient", "error": "Ingredient 'unknownIngredient' is not registered in recipe 'payments'" }
+  ]
+}</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- OBSERVABILITY -->
+  <section id="observability">
+    <h2>Observability</h2>
+    <p>Zero config. Auto-activates when the relevant library is on the classpath.</p>
+    <table>
+      <tr><th>Feature</th><th>Requires</th><th>What you get</th></tr>
+      <tr><td>Metrics</td><td>micrometer-core</td><td><code>bff.recipe.requests</code>, <code>bff.recipe.duration</code>, <code>bff.ingredient.duration</code></td></tr>
+      <tr><td>Tracing</td><td>micrometer-tracing or OTel</td><td>Parent span per recipe, child span per ingredient with recipe/status attributes</td></tr>
+      <tr><td>Health</td><td>spring-boot-actuator</td><td><code>GET /actuator/health</code> → <code>bffRecipe: UP</code> with recipe + ingredient counts</td></tr>
+    </table>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- EXAMPLE APP -->
+  <section id="example">
+    <h2>Example App</h2>
+    <p>A fully working Spring Boot application demonstrating all patterns — path variables, query params, POST bodies, header forwarding, multi-recipe membership, and mock auth.</p>
+    <div class="card-grid">
+      <div class="card">
+        <h3>🔑 Auth</h3>
+        <p>Pass <code>Authorization: Bearer demo-token</code> on all requests. Propagated automatically to every ingredient.</p>
+      </div>
+      <div class="card">
+        <h3>📦 Recipes</h3>
+        <p><code>payments</code> — account + invoices + payment methods + submit.<br/><code>dashboard</code> — account + profile + invoices.</p>
+      </div>
+      <div class="card">
+        <h3>⚙️ Run it</h3>
+        <p><code>./gradlew :bff-example:bootRun</code> — starts on port 8080.</p>
+      </div>
+      <div class="card">
+        <h3>🔍 Explore</h3>
+        <p><code>GET /bff/payments/schema</code> to see all ingredients and their types.</p>
+      </div>
+    </div>
+    <div class="code-block">
+      <div class="code-header"><span>try it — full payments recipe</span><span class="lang">bash</span></div>
+      <pre><code class="language-bash">curl -X POST http://localhost:8080/bff/payments \
+  -H "Authorization: Bearer demo-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "ingredients": [
+      { "id": "getAccount", "params": { "accountId": "acc-123" } },
+      { "id": "getInvoices", "map": { "query": { "billingGroupId": "getAccount::body::${billingGroupId}" } } },
+      { "id": "getPaymentMethods", "map": { "query": { "customerId": "getAccount::body::${customerId}" } } }
+    ]
+  }'</code></pre>
+    </div>
+    <div class="btn-row">
+      <a class="btn btn-primary" href="https://github.com/tayyab23/bff/tree/main/bff-example" target="_blank">View Source on GitHub ↗</a>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ── FAQ ── -->
+  <section id="faq">
+    <h2>FAQ — Design Decisions</h2>
+    <p>These are deliberate constraints, not missing features. Each one keeps the library simple and the aggregation layer free of business logic.</p>
+
+    <details>
+      <summary>Why no array iteration / <code>$foreach</code>?</summary>
+      <p>That's the N+1 anti-pattern. If you need to call an API N times based on a list, build a batch endpoint. The framework explicitly does not support iteration — it composes APIs, it doesn't loop over them.</p>
+    </details>
+
+    <details>
+      <summary>Why no expression language, conditionals, or string concatenation in the map block?</summary>
+      <p>The map block is path resolution only — it moves values from one ingredient's response to another's request. No transforms, no type coercion, no formatting. If you need logic, it belongs in the API itself, not the aggregation layer.</p>
+    </details>
+
+    <details>
+      <summary>Why can't I transform or reshape response data?</summary>
+      <p>Composition only. Values are moved as-is. The recipe layer is a courier, not a processor. If the frontend needs a different shape, the API should return that shape.</p>
+    </details>
+
+    <details>
+      <summary>Why is auth propagation not configurable?</summary>
+      <p>It's a security invariant. Every ingredient executes with the same identity as the original caller. Making this optional would create a class of bugs where ingredients silently run unauthenticated.</p>
+    </details>
+
+    <details>
+      <summary>Why not support cross-service aggregation?</summary>
+      <p>This is for a single Spring Boot service aggregating its own APIs via in-process dispatch. Cross-service aggregation introduces network calls, service discovery, circuit breakers, and distributed tracing concerns that belong in an API gateway or service mesh.</p>
+    </details>
+
+    <details>
+      <summary>Why is ingredient order in the JSON array ignored?</summary>
+      <p>The DAG determines execution order from your <code>::</code> references and <code>dependsOn</code> declarations. Array position is irrelevant — this prevents subtle ordering bugs.</p>
+    </details>
+
+    <details>
+      <summary>Why only one annotation (<code>@BffIngredient</code>) instead of also having <code>@BffRecipe</code>?</summary>
+      <p>One annotation to learn, one config file (<code>application.yml</code>) for recipe-level settings. Fewer places to look, fewer things to get wrong.</p>
+    </details>
+
+    <details>
+      <summary>Why no built-in rate limiting?</summary>
+      <p>Your existing Spring Security filters and interceptors already handle this — and they apply per-ingredient automatically because every dispatch goes through the full MVC chain. The <code>max-ingredients</code> config caps per-request amplification.</p>
+    </details>
+
+    <details>
+      <summary>Why not GraphQL?</summary>
+      <p>Different tool for a different problem. GraphQL gives you field-level selection, subscriptions, and a unified graph — but requires rethinking your API contracts into schemas and resolvers. bff-recipe lets you keep your REST APIs exactly as they are and just eliminate the round-trip tax. If you need GraphQL's power, use GraphQL.</p>
+    </details>
+
+    <details>
+      <summary>Are header names case-sensitive?</summary>
+      <p>No. HTTP headers are case-insensitive by spec (RFC 7230), and HTTP/2 actually requires lowercase headers. bff-recipe matches headers case-insensitively everywhere — config, annotations, and recipe requests. Original casing is preserved when forwarding.</p>
+    </details>
+
+    <details>
+      <summary>Why is <code>failFast</code> off by default?</summary>
+      <p>Most pages can render partially. If <code>getPaymentMethods</code> fails, you probably still want to show the account info and invoices. <code>failFast: true</code> is there for workflows where partial results are meaningless.</p>
+    </details>
+  </section>
+
+  <hr class="divider" />
+
+  <p style="text-align:center; color: var(--muted); font-size: 0.8rem; padding-bottom: 4rem;">
+    MIT License · <a href="https://github.com/tayyab23/bff" style="color: var(--accent-light);">github.com/tayyab23/bff</a>
+  </p>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script>
+  // Build nav from page sections
+  (function() {
+    const nav = document.getElementById('nav-links');
+    let lastGroup = '';
+    // Collect all nav-worthy elements in DOM order
+    document.querySelectorAll('section[id], [data-nav-link]').forEach(el => {
+      // Group heading from data-nav attribute
+      if (el.hasAttribute('data-nav')) {
+        const group = el.getAttribute('data-nav');
+        if (group && group !== lastGroup) {
+          const div = document.createElement('div');
+          div.className = 'nav-section';
+          div.textContent = group;
+          nav.appendChild(div);
+          lastGroup = group;
+        }
+      }
+      // Nav link
+      const id = el.id;
+      const label = el.getAttribute('data-nav-link') || (el.querySelector('h2') ? el.querySelector('h2').textContent : null) || id;
+      if (id && label) {
+        const a = document.createElement('a');
+        a.href = '#' + id;
+        a.textContent = label;
+        nav.appendChild(a);
+      }
+    });
+  })();
+
+  function copyCode(btn) {
+    const code = btn.closest('.code-block').querySelector('code').textContent;
+    navigator.clipboard.writeText(code).then(() => {
+      btn.textContent = 'Copied!';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    });
+  }
+
+  // Close drawer on mobile when clicking a nav link
+  document.querySelectorAll('#nav-links a').forEach(a => {
+    a.addEventListener('click', () => {
+      if (window.innerWidth <= 768) document.getElementById('drawer-toggle').checked = false;
+    });
+  });
+
+  // Active nav link on scroll
+  const navLinks = document.querySelectorAll('#nav-links a');
+  const targets = document.querySelectorAll('section[id], [data-nav-link]');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(a => a.classList.remove('active'));
+        const active = document.querySelector(`nav a[href="#${e.target.id}"]`);
+        if (active) {
+          active.classList.add('active');
+          active.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+      }
+    });
+  }, { rootMargin: '0px 0px -70% 0px' });
+  targets.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
