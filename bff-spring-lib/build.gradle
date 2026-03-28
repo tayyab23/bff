@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'io.github.tayyab23'
-version = '0.1.1'
+version = '1.0.0'
 
 java { sourceCompatibility = JavaVersion.VERSION_17 }
 

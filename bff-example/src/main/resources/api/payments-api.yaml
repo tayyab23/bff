@@ -1,0 +1,231 @@
+openapi: 3.0.3
+info:
+  title: BFF Example Payments API
+  version: 1.0.0
+
+paths:
+  /api/accounts/{accountId}:
+    get:
+      operationId: getAccount
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Account' }
+
+  /api/users/{userId}/profile:
+    get:
+      operationId: getUserProfile
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema: { type: string }
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+        - name: Accept-Language
+          in: header
+          schema: { type: string }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserProfile' }
+
+  /api/invoices:
+    get:
+      operationId: getInvoices
+      parameters:
+        - name: billingGroupId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: status
+          in: query
+          schema: { type: string, enum: [UNPAID, PAID, OVERDUE] }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/InvoiceList' }
+
+  /api/payment-methods:
+    get:
+      operationId: getPaymentMethods
+      parameters:
+        - name: customerId
+          in: query
+          required: true
+          schema: { type: string }
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentMethodList' }
+
+  /api/payments:
+    post:
+      operationId: submitPayment
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+        - name: X-Idempotency-Key
+          in: header
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SubmitPaymentRequest' }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmation' }
+
+  /api/notifications/send:
+    post:
+      operationId: sendNotification
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/SendNotificationRequest' }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationResult' }
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        accountId: { type: string }
+        email: { type: string }
+        fullName: { type: string }
+        billingGroupId: { type: string }
+        customerId: { type: string }
+        plan: { type: string, enum: [FREE, PRO, ENTERPRISE] }
+        region: { type: string }
+        createdAt: { type: string }
+
+    UserProfile:
+      type: object
+      properties:
+        userId: { type: string }
+        displayName: { type: string }
+        avatarUrl: { type: string }
+        timezone: { type: string }
+        locale: { type: string }
+        notificationsEnabled: { type: boolean }
+
+    InvoiceList:
+      type: object
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/Invoice' }
+        total: { type: number, format: double }
+        currency: { type: string }
+        page: { type: integer }
+
+    Invoice:
+      type: object
+      properties:
+        id: { type: string }
+        amount: { type: number, format: double }
+        status: { type: string, enum: [UNPAID, PAID, OVERDUE] }
+        dueDate: { type: string }
+        description: { type: string }
+
+    PaymentMethodList:
+      type: object
+      properties:
+        methods:
+          type: array
+          items: { $ref: '#/components/schemas/PaymentMethod' }
+
+    PaymentMethod:
+      type: object
+      properties:
+        id: { type: string }
+        type: { type: string, enum: [CARD, BANK_ACCOUNT, PAYPAL] }
+        last4: { type: string }
+        expiryMonth: { type: integer }
+        expiryYear: { type: integer }
+        isDefault: { type: boolean }
+
+    SubmitPaymentRequest:
+      type: object
+      required: [accountId, invoiceId, amount, currency, paymentMethodId]
+      properties:
+        accountId: { type: string }
+        invoiceId: { type: string }
+        amount: { type: number, format: double }
+        currency: { type: string }
+        paymentMethodId: { type: string }
+        note: { type: string }
+
+    PaymentConfirmation:
+      type: object
+      properties:
+        paymentId: { type: string }
+        status: { type: string, enum: [CONFIRMED, PENDING, FAILED] }
+        amount: { type: number, format: double }
+        currency: { type: string }
+        processedAt: { type: string }
+        receiptUrl: { type: string }
+
+    SendNotificationRequest:
+      type: object
+      required: [customerId, type, subject, body]
+      properties:
+        customerId: { type: string }
+        type: { type: string, enum: [PAYMENT_CONFIRMATION, INVOICE_REMINDER, ACCOUNT_UPDATE] }
+        subject: { type: string }
+        body: { type: string }
+        channel: { type: string, enum: [EMAIL, SMS, PUSH] }
+
+    NotificationResult:
+      type: object
+      properties:
+        notificationId: { type: string }
+        status: { type: string }
+        sentAt: { type: string }

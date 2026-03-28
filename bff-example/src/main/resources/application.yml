@@ -1,0 +1,34 @@
+bff-recipe:
+  enabled: true
+  base-path: "/bff"
+  schema:
+    enabled: true
+  validate:
+    enabled: true
+  debug:
+    enabled: true
+    mask-headers: ["Authorization", "Cookie"]
+  execution:
+    parallel-threads: 10
+    ingredient-timeout-ms: 5000
+    recipe-timeout-ms: 15000
+    max-ingredients: 10
+  headers:
+    forward:
+      enabled: true
+      blocked: ["Host", "Content-Length", "Connection"]
+    custom:
+      enabled: true
+      allowed: ["X-Idempotency-Key", "X-Feature-Flag"]
+    mapping:
+      enabled: true
+      blocked-sources: ["Set-Cookie"]
+  recipes:
+    payments:
+      ingredient-timeout-ms: 3000
+      headers:
+        custom:
+          enabled: true
+          allowed: ["X-Idempotency-Key", "X-Feature-Flag"]
+
+# Demo auth: pass `Authorization: Bearer demo-token` on all requests

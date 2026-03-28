@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.4'
+    id 'org.openapi.generator' version '7.2.0'
+}
+
+group = 'io.bff.example'
+version = '0.1.0'
+java { sourceCompatibility = JavaVersion.VERSION_17 }
+
+tasks.withType(JavaCompile).configureEach {
+    options.compilerArgs.add('-parameters')
+}
+
+openApiGenerate {
+    generatorName = "spring"
+    inputSpec = "$projectDir/src/main/resources/api/payments-api.yaml"
+    outputDir = "$buildDir/generated"
+    apiPackage = "io.bff.example.generated.api"
+    modelPackage = "io.bff.example.generated.model"
+    configOptions = [
+        useSpringBoot3    : "true",
+        interfaceOnly     : "true",
+        useTags           : "true",
+        skipDefaultInterface: "true"
+    ]
+}
+
+sourceSets.main.java.srcDirs += "$buildDir/generated/src/main/java"
+compileJava.dependsOn tasks.openApiGenerate
+
+dependencies {
+    implementation project(':bff-spring-lib')
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.openapitools:jackson-databind-nullable:0.2.6'
+    implementation 'io.swagger.core.v3:swagger-annotations:2.2.20'
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+}
