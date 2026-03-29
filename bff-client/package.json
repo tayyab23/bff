@@ -1,6 +1,6 @@
 {
   "name": "@bff-recipe/client",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "description": "TypeScript client for bff-recipe Spring Boot aggregator",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

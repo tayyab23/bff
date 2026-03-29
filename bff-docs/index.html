@@ -1333,7 +1333,7 @@ data.results.getAccount.body.plan; // ✓ typed</code></pre>
     </div>
 
     <div class="callout">
-      <strong>The types are the product.</strong> <code>RecipeRequest</code>, <code>RecipeResponse&lt;T&gt;</code>, and <code>IngredientResult&lt;T&gt;</code> give you full type safety regardless of HTTP client. The built-in <code>createBffClient</code> is just a convenience wrapper around <code>fetch</code>.
+      <strong>The types are the product.</strong> <code>RecipeRequest</code>, <code>RecipeResponse&lt;T&gt;</code>, and <code>IngredientResult&lt;T&gt;</code> give you full type safety regardless of HTTP client. Use <code>import type</code> and they add <strong>zero bytes</strong> to your runtime bundle — they exist only at compile time. The built-in <code>createBffClient</code> is just a convenience wrapper around <code>fetch</code>.
     </div>
   </section>
 

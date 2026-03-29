@@ -20,3 +20,7 @@ Thumbs.db
 # Env
 .env
 *.log
+
+# bff-client
+bff-client/node_modules/
+bff-client/dist/

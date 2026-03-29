@@ -8,7 +8,7 @@ A Backend For Frontend aggregation library for Spring Boot.
 |---|---|
 | `bff-spring-lib/` | Spring Boot starter library — published to Maven Central as `io.github.tayyab23:bff-spring-lib` |
 | `bff-example/` | Example Spring Boot app with integration tests demonstrating all BFF patterns |
-| `bff-client/` | TypeScript client package — `@bff-recipe/client` |
+| `bff-client/` | TypeScript client package — `@bff-recipe/client`. Use `import type` for zero-byte runtime overhead |
 | `bff-docs/` | Single-page documentation site |
 
 ## Quick Start
