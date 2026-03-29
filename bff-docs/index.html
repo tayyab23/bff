@@ -981,7 +981,6 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>ingredientName::header::${X-Trace-Id}</td><td>Header from a prior ingredient's response</td></tr>
       <tr><td>"json" / 42 / true</td><td>Literal — passed through as-is</td></tr>
     </table>
-    <div class="callout"><strong>No N+1.</strong> Array iteration (<code>$foreach</code>, <code>[*]</code>) is intentionally not supported. If you need to call an API N times, build a batch endpoint.</div>
     <div class="code-block">
       <div class="code-header"><span>map block — all target locations</span><span class="lang">json</span></div>
       <pre><code class="language-json">"map": {
@@ -989,6 +988,143 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   "query": { "billingGroupId": "getAccount::body::${billingGroupId}", "limit": 20 },
   "body":  { "invoiceId": "getInvoices::body::${items[0].id}", "note": "auto-pay" }
 }</code></pre>
+    </div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ARRAY OPERATORS -->
+  <section id="array-operators" data-nav-link="Array Operators">
+    <h2>Array Operators</h2>
+    <p>When one ingredient returns a list and the next ingredient needs values <em>from</em> that list, array operators let you collect, slice, and filter — all resolved into a single value passed to <strong>one</strong> batch call. No fan-out. No N+1.</p>
+
+    <div class="callout"><strong>The rule:</strong> Array operators produce a list. That list is passed as-is to the next ingredient. The library never iterates over it to make N separate calls.</div>
+
+    <div class="callout" style="border-left-color: var(--accent-light);"><strong>Proceed with care.</strong> Array operators are powerful — and easy to misuse. Before building complex filter chains, make sure you understand <a href="#anti-patterns" style="color: var(--accent-light);">API anti-patterns</a> that an aggregation layer can accidentally enable. The map block is for <em>wiring</em>, not for replacing proper API design.</div>
+
+    <h3 style="margin-top: 1.5rem;">Operator Reference</h3>
+    <table>
+      <tr><th>Category</th><th>Syntax</th><th>Example</th><th>Result</th></tr>
+      <tr><td>Collect</td><td><code>[*]</code></td><td><code>items[*].id</code></td><td>All values → <code>["inv-1", "inv-2", ...]</code></td></tr>
+      <tr><td>Index</td><td><code>[n]</code></td><td><code>items[0].id</code></td><td>Single element by position</td></tr>
+      <tr><td>Index</td><td><code>[-n]</code></td><td><code>items[-1].id</code></td><td>Single element from end</td></tr>
+      <tr><td>Slice</td><td><code>[start:end]</code></td><td><code>items[0:5].id</code></td><td>Range (exclusive end)</td></tr>
+      <tr><td>Slice</td><td><code>[start:]</code></td><td><code>items[5:].id</code></td><td>From index to end</td></tr>
+      <tr><td>Slice</td><td><code>[:end]</code></td><td><code>items[:3].id</code></td><td>First N</td></tr>
+      <tr><td>Slice</td><td><code>[-n:]</code></td><td><code>items[-3:].id</code></td><td>Last N</td></tr>
+      <tr><td>Equality</td><td><code>[?field==value]</code></td><td><code>items[?status==OVERDUE].id</code></td><td>Filter by equality</td></tr>
+      <tr><td>Equality</td><td><code>[?field!=value]</code></td><td><code>items[?status!=PAID].id</code></td><td>Filter by inequality</td></tr>
+      <tr><td>Comparison</td><td><code>[?field&gt;value]</code></td><td><code>items[?amount&gt;100].id</code></td><td>Greater than</td></tr>
+      <tr><td>Comparison</td><td><code>[?field&gt;=value]</code></td><td><code>items[?amount&gt;=100].id</code></td><td>Greater or equal</td></tr>
+      <tr><td>Comparison</td><td><code>[?field&lt;value]</code></td><td><code>items[?amount&lt;50].id</code></td><td>Less than</td></tr>
+      <tr><td>Comparison</td><td><code>[?field&lt;=value]</code></td><td><code>items[?amount&lt;=50].id</code></td><td>Less or equal</td></tr>
+      <tr><td>Set</td><td><code>[?field in (a,b)]</code></td><td><code>items[?status in (OVERDUE,UNPAID)].id</code></td><td>Set membership</td></tr>
+      <tr><td>Regex</td><td><code>[?field==REG(...)]</code></td><td><code>items[?name==REG(^Pro.*)].id</code></td><td>Regex match</td></tr>
+      <tr><td>Existence</td><td><code>[?field exists]</code></td><td><code>items[?couponCode exists].id</code></td><td>Field present and not null</td></tr>
+      <tr><td>Existence</td><td><code>[?field missing]</code></td><td><code>items[?deletedAt missing].id</code></td><td>Field absent or null</td></tr>
+      <tr><td>Boolean</td><td><code>[?field==true]</code></td><td><code>items[?active==true].id</code></td><td>Boolean match</td></tr>
+      <tr><td>Null</td><td><code>[?field==null]</code></td><td><code>items[?deletedAt==null].id</code></td><td>Null check</td></tr>
+      <tr><td>AND</td><td><code>[?a==1&amp;&amp;b==2]</code></td><td><code>items[?status==OVERDUE&amp;&amp;amount&gt;100].id</code></td><td>Both conditions</td></tr>
+      <tr><td>OR</td><td><code>[?a==1||b==2]</code></td><td><code>items[?status==OVERDUE||status==UNPAID].id</code></td><td>Either condition</td></tr>
+      <tr><td>Nested</td><td><code>[?a.b==value]</code></td><td><code>items[?billing.region==US].id</code></td><td>Dot notation in filter</td></tr>
+    </table>
+
+    <h3 style="margin-top: 1.5rem;">Type Coercion</h3>
+    <p>Filter values are auto-detected:</p>
+    <table>
+      <tr><th>Value</th><th>Detected As</th></tr>
+      <tr><td><code>true</code> / <code>false</code></td><td>Boolean</td></tr>
+      <tr><td><code>null</code></td><td>Null</td></tr>
+      <tr><td><code>42</code>, <code>3.14</code>, <code>-10</code></td><td>Number (compared as Double)</td></tr>
+      <tr><td><code>REG(^Pro.*)</code></td><td>Compiled regex pattern</td></tr>
+      <tr><td><code>in (a,b,c)</code></td><td>Set of auto-coerced values</td></tr>
+      <tr><td>Everything else</td><td>String</td></tr>
+    </table>
+
+    <h3 style="margin-top: 1.5rem;">Edge Cases</h3>
+    <table>
+      <tr><th>Scenario</th><th>Behavior</th></tr>
+      <tr><td>Path before bracket is not an array</td><td>Returns <code>null</code></td></tr>
+      <tr><td>Filter/slice produces empty result</td><td>Returns <code>[]</code> — the batch endpoint receives an empty list</td></tr>
+      <tr><td>Filter field missing on some elements</td><td>Those elements are skipped (treated as non-match)</td></tr>
+      <tr><td>Slice out of bounds</td><td>Clamped to array bounds (no error)</td></tr>
+      <tr><td>Negative index out of bounds</td><td>Returns <code>null</code></td></tr>
+    </table>
+
+    <div class="callout"><strong>Constraints:</strong> One bracket operator per path segment. No nested wildcards (<code>items[*].lines[*].sku</code>). No chaining (<code>items[?x==1][0:3]</code>). Post-collection field pluck is supported: <code>items[*].id</code> ✓</div>
+
+    <h3 style="margin-top: 1.5rem;">Real-World Example: Order Enrichment</h3>
+    <p>A frontend needs an order management dashboard. The backend has three separate systems: an <strong>Order Service</strong> (returns 100 orders), a <strong>Fulfillment Service</strong> (batch shipping status), and a <strong>Payment Service</strong> (batch payment status). Each downstream system only needs a <em>subset</em> of the orders.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff/orders — one request, three systems, two subsets</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "ingredients": [
+    {
+      "id": "getOrders",
+      "params": { "customerId": "cust-42" }
+    },
+    {
+      "id": "batchGetShipping",
+      "map": {
+        "body": {
+          "orderIds": "getOrders::body::${orders[?status!=CANCELLED].orderId}"
+        }
+      }
+    },
+    {
+      "id": "batchGetPayments",
+      "map": {
+        "body": {
+          "orderIds": "getOrders::body::${orders[?billing.method!=FREE_TRIAL&&status in (CONFIRMED,SHIPPED)].orderId}"
+        }
+      }
+    }
+  ]
+}</code></pre>
+    </div>
+
+    <p>Execution:</p>
+    <div class="code-block">
+      <div class="code-header"><span>what happens</span><span class="lang">text</span></div>
+      <pre><code>Level 0: [getOrders]                              ← fetches 100 orders
+Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
+           ↑ receives ~90 non-cancelled IDs         ↑ receives ~60 paid+confirmed IDs</code></pre>
+    </div>
+
+    <p>One network round trip. Three systems queried. Array operators handle the subsetting — no client-side filtering, no intermediate APIs, no N+1.</p>
+
+    <h3 style="margin-top: 1.5rem;">More Examples</h3>
+
+    <div class="code-block">
+      <div class="code-header"><span>collect all IDs</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"invoiceIds": "getInvoices::body::${items[*].id}"</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>only overdue, amount &gt; $100</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"invoiceIds": "getInvoices::body::${items[?status==OVERDUE&&amount>100].id}"</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>set membership</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"invoiceIds": "getInvoices::body::${items[?status in (OVERDUE,UNPAID)].id}"</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>regex match on description</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"descriptions": "getInvoices::body::${items[?description==REG(^Pro Plan.*)].description}"</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>first 10 items, last 5 items</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"firstPage": "getOrders::body::${orders[:10].orderId}"
+"recentFive": "getOrders::body::${orders[-5:].orderId}"</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>nested field filter + existence check</span><span class="lang">json</span></div>
+      <pre><code class="language-json">"usOrders": "getOrders::body::${orders[?billing.region==US&&couponCode exists].orderId}"</code></pre>
     </div>
   </section>
 
@@ -1287,6 +1423,69 @@ data.results.getAccount.body.plan; // ✓ typed</code></pre>
 
   <hr class="divider" />
 
+  <!-- ANTI-PATTERNS -->
+  <section id="anti-patterns" data-nav-link="Anti-Patterns">
+    <h2>Anti-Patterns</h2>
+    <p>An aggregation layer is powerful — and easy to misuse. These are the patterns to avoid, including ones that bff-recipe can accidentally enable if you're not careful.</p>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">One aggregation for all</h3>
+    <p>One recipe with 10 ingredients that returns everything for every screen. It starts as a convenience and becomes unmaintainable. Different screens need different data — use named recipes (<code>payments</code>, <code>dashboard</code>, <code>checkout</code>) to keep each one focused.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> One recipe per screen or user flow. If two screens share 3 ingredients, that's fine — put those ingredients in both recipes via <code>@BffIngredient(recipe = {"payments", "dashboard"})</code>, and continuously look for opportunities that reduce the scope of aggregations.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Chatty Ingredients</h3>
+    <p>12 ingredients in a recipe where each depends on the previous one. You've moved the waterfall from the client to the server — the latency is the same, you just can't see it anymore. If your DAG is a straight line, your APIs weren't designed for aggregation.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Aim for wide DAGs (many ingredients at the same level running in parallel), not deep chains. If you have a 5-level chain, consider whether some of those APIs should be merged or whether a batch endpoint would collapse the chain.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Business Logic in the Map Block</h3>
+    <p>Trying to use array operators as a transformation engine — filtering, slicing, and reshaping data that should be the API's responsibility. The map block moves data between ingredients. If you're writing complex compound filters to work around an API that returns too much, fix the API.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Array operators are for <em>subsetting</em> — picking which items to send to a batch endpoint. If you need to transform, aggregate, or compute derived values, that logic belongs in a controller method.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Skipping Batch Endpoints</h3>
+    <p>You have an API that returns 50 order IDs and another API that accepts one order ID at a time. Don't build 50 ingredients. Build a batch endpoint (<code>POST /api/orders/details</code>) that accepts a list, then use <code>[*]</code> to collect the IDs and pass them in one call.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> If you find yourself wanting N+1, that's a signal to build a batch API. The library intentionally doesn't support iteration — this is the nudge.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Leaking Internal Structure</h3>
+    <p>Enabling the schema endpoint in production and exposing your internal API paths, parameter names, and response types to the public internet. The schema endpoint is a development tool.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Keep <code>schema.enabled: false</code> and <code>validate.enabled: false</code> in production. Enable them only in dev/staging via environment-specific config.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Ignoring Idempotency on Writes</h3>
+    <p>Including a <code>submitPayment</code> ingredient in a recipe without idempotency protection. If the client retries the recipe on a network timeout, the payment gets submitted twice. Every mutating ingredient should support an idempotency key.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Use the custom header system to pass <code>X-Idempotency-Key</code> per ingredient. Your payment controller should already enforce idempotency — the BFF layer just forwards the key.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Premature Normalization</h3>
+    <p>Refusing to duplicate data across ingredient responses in the name of DRY. An API response is not your source of truth — your database is. If the order detail response needs the customer name embedded, embed it. Don't force the client to join data from two ingredients.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Each ingredient should return everything the client needs from that resource. The recipe layer moves data between ingredients for <em>wiring</em>, not for <em>assembly</em>.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Synchronous Heavy Lifting</h3>
+    <p>Putting a long-running operation (report generation, bulk export) as an ingredient. The recipe has a timeout, and a 30-second ingredient blocks the entire recipe. Heavy operations should be async.</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Instead:</strong> Long-running operations should return <code>202 Accepted</code> with a job ID. The client polls separately. Don't put them in a recipe.
+    </div>
+
+    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">When You Actually Want SSR</h3>
+    <p>Your frontend team builds increasingly complex recipes, parses the JSON response, maps it into components, and renders a page — every time. If the end result is always a fully rendered page and not an interactive SPA that manages state, you're doing server-side rendering with extra steps.</p>
+    <p>BFF aggregation is the right tool when you have a rich client that needs raw JSON from multiple APIs in one round trip — SPAs, mobile apps, or any client that manages its own state and renders interactively. It's the <em>wrong</em> tool when the real problem is "we want the server to render the page."</p>
+    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+      <strong>Ask your team:</strong> Are we assembling data to power an interactive UI, or are we assembling data to template into HTML? If it's the latter, look at SSR frameworks that render HTML server-side and send it ready to display. No JSON parsing, no client-side assembly, no recipe complexity. bff-recipe solves the aggregation problem, not the rendering problem.
+    </div>
+  </section>
+
+  <hr class="divider" />
+
   <!-- ── FAQ ── -->
   <section id="faq">
     <h2>FAQ — Design Decisions</h2>
@@ -1294,7 +1493,7 @@ data.results.getAccount.body.plan; // ✓ typed</code></pre>
 
     <details>
       <summary>Why no array iteration / <code>$foreach</code>?</summary>
-      <p>That's the N+1 anti-pattern. If you need to call an API N times based on a list, build a batch endpoint. The framework explicitly does not support iteration — it composes APIs, it doesn't loop over them.</p>
+      <p>That's the N+1 anti-pattern. Array operators (<code>[*]</code>, <code>[?filter]</code>, <code>[start:end]</code>) collect values into a single list for one batch call — they never fan out into N separate calls. If you need to call an API per item, build a batch endpoint.</p>
     </details>
 
     <details>
