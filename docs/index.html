@@ -3,6 +3,12 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="bff-recipe — a zero-config Spring Boot library that turns existing REST controllers into composable BFF endpoints. One annotation, one request, all your data." />
+  <meta name="keywords" content="Spring Boot, BFF, Backend for Frontend, API aggregation, REST composition, Spring Boot starter, API orchestration, microservices" />
+  <meta property="og:title" content="bff-recipe — API aggregation for Spring Boot" />
+  <meta property="og:description" content="Stop writing custom aggregation controllers. Annotate your existing REST endpoints and compose them into single-request recipes." />
+  <meta property="og:url" content="https://tayyab23.github.io/bff/" />
+  <meta property="og:type" content="website" />
   <title>Backend For Frontend — API Recipe Aggregator for Spring Boot</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
   <style>
@@ -416,7 +422,7 @@
     <h1>bff-recipe</h1>
     <p style="font-size: 1rem; color: var(--muted); margin-top: -0.5rem; margin-bottom: 1.25rem;">A Backend For Frontend aggregation library</p>
     <p class="hero-sub">
-      API producers build endpoints the way they want. Consumers compose them the way they need.
+      API producers build endpoints the way they want. Consumers compose them the way they need. One annotation bridges the gap.
       No tug of war between team priorities. No custom aggregation endpoints. No wasted round trips.
     </p>
     <p style="font-size: 0.95rem; color: var(--text); margin-bottom: 2rem;">
@@ -672,6 +678,45 @@ public ResponseEntity&lt;Account&gt; getAccount(@PathVariable String accountId) 
 
   <hr class="divider" />
 
+  <!-- FOR FRONTEND TEAMS -->
+  <section id="frontend" data-nav-link="For Frontend Teams">
+    <h2>For Frontend Teams</h2>
+    <p>Your backend team adds <code>@BffIngredient</code> to their controllers. You compose recipes and get typed responses. Install the type definitions — they add <strong>zero bytes</strong> to your runtime bundle.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>install</span><span class="lang">bash</span></div>
+      <pre><code class="language-bash">npm install @bff-recipe/types --save-dev</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>typed BFF call with Axios</span><span class="lang">typescript</span></div>
+      <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/types';
+import axios from 'axios';
+
+interface Account { accountId: string; plan: string; billingGroupId: string; }
+interface InvoiceList { items: { id: string; amount: number }[]; total: number; }
+
+type PaymentsPage = { getAccount: Account; getInvoices: InvoiceList; };
+
+const request: RecipeRequest = {
+  ingredients: [
+    { id: 'getAccount', params: { accountId: 'acc-123' } },
+    { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } }
+  ]
+};
+
+const { data } = await axios.post&lt;RecipeResponse&lt;PaymentsPage&gt;&gt;('/bff/payments', request);
+
+data.results.getAccount.body.plan;             // ✓ string
+data.results.getInvoices.body.items[0].amount; // ✓ number
+data.results.nonExistent;                      // ✗ compile error</code></pre>
+    </div>
+
+    <p>Use <code>import type</code> and your bundler strips the import entirely — the types exist only at compile time. Works with fetch, Axios, ky, or any HTTP client. <a href="#ts-types" style="color: var(--accent-light);">Full reference →</a></p>
+  </section>
+
+  <hr class="divider" />
+
   <!-- ── COMPARISON ── -->
   <section id="comparison">
     <h2>How it compares</h2>
@@ -876,6 +921,35 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
 
   <hr class="divider" />
 
+  <!-- SECURITY MODEL -->
+  <section id="security-model" data-nav-link="Security Model">
+    <h2>Security Model</h2>
+    <p>The client controls <em>which</em> ingredients to call and <em>what values</em> to pass via the <code>map</code> block. Here's what that means for security — and why it doesn't escalate privileges.</p>
+
+    <h3 style="margin-top: 1.5rem;">What the client can do</h3>
+    <table>
+      <tr><th>Action</th><th>Example</th><th>Why it's safe</th></tr>
+      <tr><td>Choose which ingredients to call</td><td><code>{"id": "getAccount"}</code></td><td>Only ingredients registered in the recipe via <code>@BffIngredient</code> are callable. Unknown IDs → 400.</td></tr>
+      <tr><td>Pass path/query params</td><td><code>"params": {"accountId": "acc-123"}</code></td><td>Same as calling <code>GET /api/accounts/acc-123</code> directly. Your controller validates the input.</td></tr>
+      <tr><td>Wire values between ingredients</td><td><code>"getAccount::body::${accountId}"</code></td><td>The resolved value is passed as a normal parameter. Your controller's <code>@Valid</code>, <code>@PreAuthorize</code>, and business logic still apply.</td></tr>
+      <tr><td>Send custom headers</td><td><code>"custom": {"X-Idempotency-Key": "abc"}</code></td><td>Server allowlist controls which custom headers are permitted. Global blocklist always wins.</td></tr>
+    </table>
+
+    <h3 style="margin-top: 1.5rem;">What the client cannot do</h3>
+    <table>
+      <tr><th>Attempt</th><th>Result</th></tr>
+      <tr><td>Call an endpoint not annotated with <code>@BffIngredient</code></td><td>400 — ingredient not found in recipe</td></tr>
+      <tr><td>Call an ingredient from a different recipe</td><td>400 — ingredient not registered in this recipe</td></tr>
+      <tr><td>Bypass auth on an ingredient</td><td>Impossible — SecurityContext is always propagated, <code>@PreAuthorize</code> runs on every dispatch</td></tr>
+      <tr><td>Inject a header blocked by server policy</td><td>Silently stripped — global blocklist always wins</td></tr>
+      <tr><td>Access another user's data via parameter manipulation</td><td>Your controller's authorization logic prevents this — the recipe layer doesn't bypass it</td></tr>
+    </table>
+
+    <div class="callout"><strong>The key insight:</strong> a recipe request is equivalent to the client making the same API calls individually. Every ingredient dispatches through the full Spring MVC chain — filters, interceptors, security, validation. The recipe layer is a transport optimization, not a privilege escalation.</div>
+  </section>
+
+  <hr class="divider" />
+
   <!-- HEADERS -->
   <section id="headers">
     <h2>Header System</h2>
@@ -989,6 +1063,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   "body":  { "invoiceId": "getInvoices::body::${items[0].id}", "note": "auto-pay" }
 }</code></pre>
     </div>
+    <div class="callout" style="border-left-color: var(--accent-light);"><strong>Known limitation:</strong> Expression strings like <code>getAccount::body::${billingGroupId}</code> have no IDE support or compile-time validation — a typo silently resolves to <code>null</code> at runtime. Enable the <a href="#discovery" style="color: var(--accent-light);">validate endpoint</a> in dev/staging to catch these before they hit production: <code>bff-recipe.validate.enabled: true</code>.</div>
   </section>
 
   <hr class="divider" />
@@ -1508,7 +1583,7 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
 
     <details>
       <summary>Why not support cross-service aggregation?</summary>
-      <p>This is for a single Spring Boot service aggregating its own APIs via in-process dispatch. Cross-service aggregation introduces network calls, service discovery, circuit breakers, and distributed tracing concerns that belong in an API gateway or service mesh.</p>
+      <p>bff-recipe uses in-process dispatch — it calls controllers within the same JVM. This makes it a perfect fit for monoliths, modular monoliths, or a dedicated aggregation service where you proxy downstream APIs through local controllers. Cross-service aggregation introduces network calls, service discovery, circuit breakers, and distributed tracing concerns that belong in an API gateway or service mesh.</p>
     </details>
 
     <details>
