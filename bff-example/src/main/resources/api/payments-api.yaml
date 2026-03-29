@@ -132,6 +132,26 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/NotificationResult' }
 
+  /api/invoices/balance:
+    post:
+      operationId: batchGetInvoiceBalance
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BatchBalanceRequest' }
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BatchBalanceResponse' }
+
 components:
   schemas:
     Account:
@@ -229,3 +249,26 @@ components:
         notificationId: { type: string }
         status: { type: string }
         sentAt: { type: string }
+
+    BatchBalanceRequest:
+      type: object
+      required: [invoiceIds]
+      properties:
+        invoiceIds:
+          type: array
+          items: { type: string }
+
+    BatchBalanceResponse:
+      type: object
+      properties:
+        balances:
+          type: array
+          items: { $ref: '#/components/schemas/InvoiceBalance' }
+
+    InvoiceBalance:
+      type: object
+      properties:
+        invoiceId: { type: string }
+        amountDue: { type: number, format: double }
+        currency: { type: string }
+        status: { type: string, enum: [DUE, PAID, OVERDUE] }

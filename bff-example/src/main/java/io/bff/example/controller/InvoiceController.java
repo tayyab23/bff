@@ -32,4 +32,24 @@ public class InvoiceController {
             .currency("USD")
             .page(1));
     }
+
+    @BffIngredient(recipe = "payments", name = "batchGetInvoiceBalance",
+                   forwardHeaders = {"Authorization"})
+    @PostMapping("/api/invoices/balance")
+    public ResponseEntity<BatchBalanceResponse> batchGetInvoiceBalance(
+            @RequestBody BatchBalanceRequest request,
+            @RequestHeader("Authorization") String authorization) {
+
+        var ids = request.getInvoiceIds();
+        List<InvoiceBalance> balances = new java.util.ArrayList<>();
+        for (int i = 0; i < ids.size(); i++) {
+            balances.add(new InvoiceBalance()
+                .invoiceId(ids.get(i))
+                .amountDue(249.95 + (i * 100))
+                .currency("USD")
+                .status(i % 2 == 0 ? InvoiceBalance.StatusEnum.DUE : InvoiceBalance.StatusEnum.OVERDUE));
+        }
+
+        return ResponseEntity.ok(new BatchBalanceResponse().balances(balances));
+    }
 }

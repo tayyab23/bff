@@ -221,6 +221,264 @@ class BffIntegrationTest {
         // debug info assertion depends on lib implementation — at minimum the request succeeds
     }
 
+    // ── Array collect [*]: all invoice IDs for batch call ──
+
+    @Test
+    void arrayCollectAll_batchInvoiceBalance() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[*].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.status").value(200))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances").isArray())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(2))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].invoiceId").value("inv-001"))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].amountDue").value(249.95))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[1].invoiceId").value("inv-002"))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[1].amountDue").value(349.95));
+    }
+
+    // ── Array filter [?field==value]: only OVERDUE invoices ──
+
+    @Test
+    void arrayFilterEq_overdueOnly() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[?status==OVERDUE].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(1))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].invoiceId").value("inv-002"));
+    }
+
+    // ── Array filter [?field!=value]: exclude PAID ──
+
+    @Test
+    void arrayFilterNeq_excludePaid() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[?status!=PAID].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(2));
+    }
+
+    // ── Array filter numeric [?amount>value] ──
+
+    @Test
+    void arrayFilterNumericGt_highValueInvoices() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[?amount>250].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances").isArray());
+    }
+
+    // ── Array filter numeric [?amount<=value] ──
+
+    @Test
+    void arrayFilterNumericLte() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[?amount<=249.99].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(2));
+    }
+
+    // ── Array slice [:1]: first invoice only ──
+
+    @Test
+    void arraySliceFirst_oneInvoice() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[:1].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(1))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].invoiceId").value("inv-001"));
+    }
+
+    // ── Array slice [1:]: skip first ──
+
+    @Test
+    void arraySliceFromIndex_skipFirst() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[1:].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(1))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].invoiceId").value("inv-002"));
+    }
+
+    // ── Array slice [-1:]: last invoice ──
+
+    @Test
+    void arraySliceNegative_lastInvoice() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[-1:].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(1))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances[0].invoiceId").value("inv-002"));
+    }
+
+    // ── Array index [0]: single element (existing behavior) ──
+
+    @Test
+    void arrayIndex_singleElement() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[0].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.status").value(200));
+    }
+
+    // ── Array negative index [-1]: last element ──
+
+    @Test
+    void arrayNegativeIndex_lastElement() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[-1].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.status").value(200));
+    }
+
+    // ── Three-level dependency chain: account → invoices → batch balance ──
+
+    @Test
+    void threeLevelChain_accountToInvoicesToBalance() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
+                        {"id": "getPaymentMethods", "map": {"query": {"customerId": "getAccount::body::${customerId}"}}},
+                        {"id": "batchGetInvoiceBalance", "map": {"body": {"invoiceIds": "getInvoices::body::${items[*].id}"}}}
+                    ]}"""))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.results.getAccount.status").value(200))
+            .andExpect(jsonPath("$.results.getInvoices.status").value(200))
+            .andExpect(jsonPath("$.results.getPaymentMethods.status").value(200))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.status").value(200))
+            .andExpect(jsonPath("$.results.batchGetInvoiceBalance.body.balances.length()").value(2));
+    }
+
+    // ── failFast=true aborts on first failure ──
+
+    @Test
+    void failFastTrue_abortsRemaining() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"failFast": true, "ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}},
+                        {"id": "submitPayment", "dependsOn": ["getAccount"]}
+                    ]}"""))
+            .andExpect(status().is(207));
+    }
+
+    // ── Empty ingredients list ──
+
+    @Test
+    void emptyIngredients_returns400() throws Exception {
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": []}"""))
+            .andExpect(status().isBadRequest());
+    }
+
+    // ── Unknown recipe returns 404 ──
+
+    @Test
+    void unknownRecipe_returns404() throws Exception {
+        mvc.perform(post("/bff/nonexistent")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getAccount", "params": {"accountId": "acc-123"}}
+                    ]}"""))
+            .andExpect(status().isNotFound());
+    }
+
+    // ── Ingredient not in this recipe returns 400 ──
+
+    @Test
+    void ingredientWrongRecipe_returns400() throws Exception {
+        // getUserProfile belongs to dashboard, not payments
+        mvc.perform(post("/bff/payments")
+                .header("Authorization", AUTH)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                    {"ingredients": [
+                        {"id": "getUserProfile", "params": {"userId": "user-123"}}
+                    ]}"""))
+            .andExpect(status().isBadRequest());
+    }
+
     // ── 207 Multi-Status on partial failure ──
 
     @Test
