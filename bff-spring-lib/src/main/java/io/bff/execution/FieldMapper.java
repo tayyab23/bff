@@ -8,6 +8,7 @@ import java.util.regex.*;
 public class FieldMapper {
 
     private static final Pattern REF = Pattern.compile("^(\\w+)::(body|header)::\\$\\{([^}]+)\\}$");
+    private static final Pattern BRACKET = Pattern.compile("\\[[^]]+]");
 
     public static List<String> inferDependencies(IngredientInput input) {
         Set<String> deps = new HashSet<>();
@@ -42,20 +43,43 @@ public class FieldMapper {
     }
 
     @SuppressWarnings("unchecked")
-    private static Object extractPath(Object obj, String path) {
-        String[] parts = path.split("\\.");
+    static Object extractPath(Object obj, String path) {
+        List<String> segments = splitPath(path);
         Object current = obj;
-        for (String part : parts) {
+        for (int i = 0; i < segments.size(); i++) {
             if (current == null) return null;
-            int idx = -1;
-            String key = part;
-            if (part.contains("[")) {
-                key = part.substring(0, part.indexOf('['));
-                idx = Integer.parseInt(part.replaceAll(".*\\[(\\d+)\\].*", "$1"));
+            String seg = segments.get(i);
+            Matcher bm = BRACKET.matcher(seg);
+            String key = bm.find() ? seg.substring(0, bm.start()) : seg;
+            if (!key.isEmpty() && current instanceof Map<?, ?> map) current = map.get(key);
+            bm.reset(seg);
+            if (bm.find() && current instanceof List<?> list) {
+                ArrayOperator op = ArrayOperator.parse(bm.group());
+                Object result = op.apply(list);
+                if (result instanceof List<?> collected && i + 1 < segments.size()) {
+                    String remaining = String.join(".", segments.subList(i + 1, segments.size()));
+                    return collected.stream()
+                            .map(item -> extractPath(item, remaining))
+                            .filter(Objects::nonNull)
+                            .toList();
+                }
+                current = result;
             }
-            if (current instanceof Map<?, ?> map) current = map.get(key);
-            if (idx >= 0 && current instanceof List<?> list) current = list.get(idx);
         }
         return current;
+    }
+
+    private static List<String> splitPath(String path) {
+        List<String> parts = new ArrayList<>();
+        StringBuilder sb = new StringBuilder();
+        int depth = 0;
+        for (char c : path.toCharArray()) {
+            if (c == '[') depth++;
+            if (c == ']') depth--;
+            if (c == '.' && depth == 0) { parts.add(sb.toString()); sb.setLength(0); }
+            else sb.append(c);
+        }
+        if (!sb.isEmpty()) parts.add(sb.toString());
+        return parts;
     }
 }
