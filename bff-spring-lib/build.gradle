@@ -7,7 +7,7 @@ plugins {
 }
 
 group = 'io.github.tayyab23'
-version = '1.0.0'
+version = new Properties().with { load(rootProject.file('version.properties').newReader()); getProperty('version') }
 
 java { sourceCompatibility = JavaVersion.VERSION_17 }
 
