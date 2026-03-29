@@ -6,6 +6,9 @@ echo "Updating to version $VERSION"
 
 # Gradle lib (reads at build time, no change needed)
 
+# Spring lib build.gradle
+sed -i '' "s/version = '.*'/version = '${VERSION}'/" bff-spring-lib/build.gradle
+
 # npm package
 cd bff-types
 npm version "$VERSION" --no-git-tag-version --allow-same-version 2>/dev/null
