@@ -44,20 +44,3 @@ export interface RecipeRequest {
   failFast?: boolean;
   headers?: { forward?: boolean; forwardOnly?: string[] };
 }
-
-export function createBffClient(baseUrl: string) {
-  return {
-    async execute<T extends Record<string, unknown>>(
-      recipe: string,
-      request: RecipeRequest
-    ): Promise<RecipeResponse<T>> {
-      const res = await fetch(`${baseUrl}/${recipe}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(request),
-      });
-      if (!res.ok && res.status !== 207) throw new Error(`BFF error: ${res.status}`);
-      return res.json();
-    },
-  };
-}

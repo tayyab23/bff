@@ -1,93 +1,53 @@
 # bff-recipe
 
-A Backend For Frontend aggregation library for Spring Boot.
+A zero-config Backend For Frontend aggregation library for Spring Boot.
 
-## Project Structure
+Add one dependency, annotate your existing controllers with `@BffIngredient`, and get composite API endpoints that eliminate client-side round trips.
 
-| Directory | Purpose |
-|---|---|
-| `bff-spring-lib/` | Spring Boot starter library — published to Maven Central as `io.github.tayyab23:bff-spring-lib` |
-| `bff-example/` | Example Spring Boot app with integration tests demonstrating all BFF patterns |
-| `bff-client/` | TypeScript client package — `@bff-recipe/client`. Use `import type` for zero-byte runtime overhead |
-| `bff-docs/` | Single-page documentation site |
+## Packages
 
-## Quick Start
+| Package | Install | Description |
+|---|---|---|
+| [bff-spring-lib](./bff-spring-lib) | `implementation 'io.github.tayyab23:bff-spring-lib:1.0.0'` | Spring Boot starter — the core library |
+| [@bff-recipe/types](./bff-types) | `npm install @bff-recipe/types --save-dev` | TypeScript type definitions for frontend consumers |
+| [bff-example](./bff-example) | — | Working example app with integration tests |
 
-Add the dependency:
-
-```groovy
-implementation 'io.github.tayyab23:bff-spring-lib:1.0.0'
-```
-
-Annotate any controller:
+## 30-Second Overview
 
 ```java
-@BffIngredient
+// 1. Annotate your existing controller — it keeps working as a standalone API
+@BffIngredient(recipe = "payments")
 @GetMapping("/api/accounts/{accountId}")
 public ResponseEntity<Account> getAccount(@PathVariable String accountId) { ... }
 ```
 
-Call `POST /bff`:
+```json
+// 2. Client sends one request instead of N
+POST /bff/payments
+{
+  "ingredients": [
+    { "id": "getAccount", "params": { "accountId": "acc-123" } },
+    { "id": "getInvoices", "map": { "query": { "billingGroupId": "getAccount::body::${billingGroupId}" } } }
+  ]
+}
+```
 
 ```json
-{ "ingredients": [{ "id": "getAccount", "params": { "accountId": "acc-123" } }] }
+// 3. Get everything back in one response
+{
+  "executionOrder": ["getAccount", "getInvoices"],
+  "results": {
+    "getAccount": { "status": 200, "body": { "accountId": "acc-123", "billingGroupId": "bg-1" } },
+    "getInvoices": { "status": 200, "body": { "items": [...], "total": 249.99 } }
+  }
+}
 ```
 
-No `application.yml` needed. Configuration is entirely optional.
+No `application.yml` required. Configuration is entirely optional.
 
-## Running the Example App
+## Documentation
 
-```bash
-./gradlew :bff-example:bootRun
-```
-
-```bash
-curl -X POST http://localhost:8080/bff/payments \
-  -H "Authorization: Bearer demo-token" \
-  -H "Content-Type: application/json" \
-  -d '{"ingredients": [
-    {"id": "getAccount", "params": {"accountId": "acc-123"}},
-    {"id": "getInvoices", "map": {"query": {"billingGroupId": "getAccount::body::${billingGroupId}"}}},
-    {"id": "getPaymentMethods", "map": {"query": {"customerId": "getAccount::body::${customerId}"}}}
-  ]}'
-```
-
-## Running Tests
-
-```bash
-./gradlew :bff-example:test
-```
-
-The integration tests cover:
-- Single ingredient execution
-- Parallel execution with dependency wiring
-- Multi-recipe support (payments + dashboard)
-- Schema and validate discovery endpoints
-- Auth enforcement (401 without token)
-- Custom header forwarding
-- Unknown ingredient rejection (400)
-- Max ingredients limit (400)
-- Debug mode
-- Partial failure (207 Multi-Status)
-
-## Publishing the Library
-
-### Prerequisites
-
-- GPG key published to `keyserver.ubuntu.com`
-- Sonatype Central token in `~/.gradle/gradle.properties`:
-  ```properties
-  sonatypeUsername=YOUR_TOKEN
-  sonatypePassword=YOUR_PASSWORD
-  signing.gnupg.executable=gpg
-  signing.gnupg.keyName=YOUR_KEY_FINGERPRINT!
-  ```
-
-### Publish
-
-```bash
-./gradlew :bff-spring-lib:clean :bff-spring-lib:publishToCentral
-```
+Full docs at [tayyab23.github.io/bff](https://tayyab23.github.io/bff)
 
 ## License
 

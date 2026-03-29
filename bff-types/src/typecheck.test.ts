@@ -1,8 +1,7 @@
 // Type-level verification — this file must compile with zero errors.
 // If the generics are wrong, `tsc` will catch it here.
 
-import {
-  createBffClient,
+import type {
   RecipeRequest,
   RecipeResponse,
   IngredientResult,
@@ -27,50 +26,46 @@ interface PaymentMethodList {
   methods: { id: string; type: 'CARD' | 'BANK_ACCOUNT'; last4: string }[];
 }
 
-// ── 1. createBffClient — typed response ──
+// ── 1. RecipeResponse with Axios / fetch / any HTTP client ──
 
-async function testClient() {
-  const bff = createBffClient('/bff');
-
-  const res = await bff.execute<{
+function testTypedResponse() {
+  type PaymentsResult = {
     getAccount: Account;
     getInvoices: InvoiceList;
     getPaymentMethods: PaymentMethodList;
-  }>('payments', {
-    ingredients: [
-      { id: 'getAccount', params: { accountId: 'acc-123' } },
-      { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } },
-      { id: 'getPaymentMethods', map: { query: { customerId: 'getAccount::body::${customerId}' } } },
-    ],
-  });
-
-  // Proves the generic maps ingredient ID → typed body
-  const accountId: string = res.results.getAccount.body.accountId;
-  const plan: 'FREE' | 'PRO' | 'ENTERPRISE' = res.results.getAccount.body.plan;
-  const invoiceTotal: number = res.results.getInvoices.body.total;
-  const methodType: 'CARD' | 'BANK_ACCOUNT' = res.results.getPaymentMethods.body.methods[0].type;
-  const status: number = res.results.getAccount.status;
-  const executionOrder: (string | string[])[] = res.executionOrder;
-
-  // @ts-expect-error — 'nonExistent' is not a key in the result map
-  const bad1 = res.results.nonExistent;
-
-  // @ts-expect-error — 'plan' is not a number
-  const bad2: number = res.results.getAccount.body.plan;
-}
-
-// ── 2. RecipeResponse standalone (bring your own client) ──
-
-async function testBYOClient() {
-  type PaymentsResult = { getAccount: Account; getInvoices: InvoiceList };
+  };
 
   // Simulating: const { data } = await axios.post<RecipeResponse<PaymentsResult>>(...)
   const data: RecipeResponse<PaymentsResult> = {} as any;
 
+  // These must compile — proves the generic maps ingredient ID → typed body
+  const accountId: string = data.results.getAccount.body.accountId;
+  const plan: 'FREE' | 'PRO' | 'ENTERPRISE' = data.results.getAccount.body.plan;
+  const invoiceTotal: number = data.results.getInvoices.body.total;
+  const currency: string = data.results.getInvoices.body.currency;
+  const firstInvoiceAmount: number = data.results.getInvoices.body.items[0].amount;
+  const methodType: 'CARD' | 'BANK_ACCOUNT' = data.results.getPaymentMethods.body.methods[0].type;
+  const status: number = data.results.getAccount.status;
+  const executionOrder: (string | string[])[] = data.executionOrder;
+
+  // @ts-expect-error — 'nonExistent' is not a key in the result map
+  const bad1 = data.results.nonExistent;
+
+  // @ts-expect-error — 'plan' is not a number
+  const bad2: number = data.results.getAccount.body.plan;
+}
+
+// ── 2. Subset of ingredients ──
+
+function testSubset() {
+  type DashboardResult = { getAccount: Account; getInvoices: InvoiceList };
+
+  const data: RecipeResponse<DashboardResult> = {} as any;
+
   const accountId: string = data.results.getAccount.body.accountId;
   const items = data.results.getInvoices.body.items;
 
-  // @ts-expect-error — 'getPaymentMethods' not in PaymentsResult
+  // @ts-expect-error — 'getPaymentMethods' not in DashboardResult
   const bad = data.results.getPaymentMethods;
 }
 
@@ -79,12 +74,13 @@ async function testBYOClient() {
 function testIngredientResult() {
   const result: IngredientResult<Account> = {} as any;
   const id: string = result.body.accountId;
+  const status: number = result.status;
 
   // @ts-expect-error — 'foo' doesn't exist on Account
   const bad = result.body.foo;
 }
 
-// ── 4. RecipeRequest structure ──
+// ── 4. RecipeRequest is structurally valid ──
 
 const validRequest: RecipeRequest = {
   ingredients: [

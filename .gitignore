@@ -22,5 +22,5 @@ Thumbs.db
 *.log
 
 # bff-client
-bff-client/node_modules/
-bff-client/dist/
+bff-types/node_modules/
+bff-types/dist/

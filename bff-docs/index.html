@@ -1278,62 +1278,57 @@ public ResponseEntity&lt;InvoiceList&gt; getInvoices(
 
   <hr class="divider" />
 
-  <!-- TS CLIENT -->
-  <section id="ts-client">
-    <h2>TypeScript Client</h2>
-    <p>The package exports request/response types and an optional <code>fetch</code>-based client. Use the types with whatever HTTP client you already have — Axios, <code>ky</code>, generated SDK, or plain <code>fetch</code>.</p>
+  <!-- TS TYPES -->
+  <section id="ts-types">
+    <h2>TypeScript Types</h2>
+    <p><code>@bff-recipe/types</code> gives you compile-time safety for recipe requests and responses. It ships only type definitions — <strong>zero bytes</strong> added to your runtime bundle via <code>import type</code>. Use it with whatever HTTP client you already have.</p>
 
     <div class="code-block">
       <div class="code-header"><span>install</span><span class="lang">bash</span></div>
-      <pre><code class="language-bash">npm install @bff-recipe/client</code></pre>
+      <pre><code class="language-bash">npm install @bff-recipe/types --save-dev</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">Option 1 — Use the built-in client</h3>
+    <h3 style="margin-top: 1.5rem;">With Axios</h3>
     <div class="code-block">
-      <div class="code-header"><span>built-in fetch client</span><span class="lang">typescript</span></div>
-      <pre><code class="language-typescript">import { createBffClient } from '@bff-recipe/client';
+      <div class="code-header"><span>typed BFF call</span><span class="lang">typescript</span></div>
+      <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/types';
+import axios from 'axios';
 
-// your own types — from OpenAPI codegen, Smithy, or hand-written
+// Your own types — from OpenAPI codegen, Smithy, or hand-written
 interface Account { accountId: string; plan: string; billingGroupId: string; }
 interface InvoiceList { items: { id: string; amount: number }[]; total: number; }
 
-const bff = createBffClient('/bff');
+type PaymentsPage = { getAccount: Account; getInvoices: InvoiceList; };
 
-const res = await bff.execute&lt;{
-  getAccount: Account;
-  getInvoices: InvoiceList;
-}&gt;('payments', {
+const request: RecipeRequest = {
   ingredients: [
     { id: 'getAccount', params: { accountId: 'acc-123' } },
     { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } }
   ]
-});
+};
 
-res.results.getAccount.body.accountId;        // ✓ string
-res.results.getInvoices.body.items[0].amount; // ✓ number</code></pre>
+const { data } = await axios.post&lt;RecipeResponse&lt;PaymentsPage&gt;&gt;('/bff/payments', request);
+
+data.results.getAccount.body.plan;             // ✓ string
+data.results.getInvoices.body.items[0].amount; // ✓ number
+data.results.nonExistent;                      // ✗ compile error</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">Option 2 — Types only, bring your own client</h3>
+    <h3 style="margin-top: 1.5rem;">With fetch</h3>
     <div class="code-block">
-      <div class="code-header"><span>with Axios</span><span class="lang">typescript</span></div>
-      <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/client';
-import axios from 'axios';
+      <div class="code-header"><span>plain fetch</span><span class="lang">typescript</span></div>
+      <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/types';
 
-type PaymentsResult = { getAccount: Account; getInvoices: InvoiceList; };
-
-const { data } = await axios.post&lt;RecipeResponse&lt;PaymentsResult&gt;&gt;(
-  '/bff/payments',
-  { ingredients: [
-      { id: 'getAccount', params: { accountId: 'acc-123' } },
-      { id: 'getInvoices', map: { query: { billingGroupId: 'getAccount::body::${billingGroupId}' } } }
-  ] } satisfies RecipeRequest
-);
-
-data.results.getAccount.body.plan; // ✓ typed</code></pre>
+const res = await fetch('/bff/payments', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(request),
+});
+const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
     </div>
 
     <div class="callout">
-      <strong>The types are the product.</strong> <code>RecipeRequest</code>, <code>RecipeResponse&lt;T&gt;</code>, and <code>IngredientResult&lt;T&gt;</code> give you full type safety regardless of HTTP client. Use <code>import type</code> and they add <strong>zero bytes</strong> to your runtime bundle — they exist only at compile time. The built-in <code>createBffClient</code> is just a convenience wrapper around <code>fetch</code>.
+      <strong>Zero runtime cost.</strong> <code>RecipeRequest</code>, <code>RecipeResponse&lt;T&gt;</code>, and <code>IngredientResult&lt;T&gt;</code> exist only at compile time. Use <code>import type</code> and your bundler strips them entirely. The package has no dependencies and no runtime code.
     </div>
   </section>
 

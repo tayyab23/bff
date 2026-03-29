@@ -1,7 +1,7 @@
 {
-  "name": "@bff-recipe/client",
-  "version": "1.0.1",
-  "description": "TypeScript client for bff-recipe Spring Boot aggregator",
+  "name": "@bff-recipe/types",
+  "version": "1.0.0",
+  "description": "TypeScript type definitions for bff-recipe Spring Boot aggregator",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
