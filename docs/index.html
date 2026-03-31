@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="bff-recipe is a Spring Boot library that auto-registers BFF aggregation endpoints via annotations. Compose multiple REST APIs into one request — zero config, no GraphQL schema required." />
+  <meta name="description" content="bff-recipe is a Spring Boot library for BFF API aggregation. Compose multiple REST APIs into one request — via annotations or pure YAML config. No GraphQL schema required." />
   <meta name="keywords" content="spring boot api aggregation, backend for frontend spring boot, BFF pattern java, spring boot reduce api round trips, graphql alternative spring boot, REST composition, Spring Boot starter" />
   <meta property="og:title" content="bff-recipe — Spring Boot BFF Aggregation Library" />
   <meta property="og:description" content="One annotation. One request. Compose multiple REST APIs into a single parallel-executed response. No GraphQL schema. No custom endpoints." />
@@ -13,7 +13,8 @@
   <meta name="twitter:title" content="bff-recipe — Spring Boot BFF Aggregation Library" />
   <meta name="twitter:description" content="One annotation. One request. Compose multiple REST APIs into a single parallel-executed response." />
   <link rel="canonical" href="https://tayyab23.github.io/bff/" />
-  <title>bff-recipe — Spring Boot BFF Aggregation Library | Zero Config</title>
+  <title>bff-recipe — Spring Boot BFF Aggregation Library</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👨‍🍳</text></svg>" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" media="print" onload="this.media='all'" />
   <script type="application/ld+json">
   {
@@ -444,7 +445,7 @@
 
   <!-- ── OVERVIEW ── -->
   <section id="overview" data-nav data-nav-link="What &amp; Why">
-    <div class="hero-badge">Spring Boot 3.x · Java 17 · Zero Config</div>
+    <div class="hero-badge">Spring Boot 3.x · Java 17</div>
     <h1>bff-recipe</h1>
     <p style="font-size: 1rem; color: var(--muted); margin-top: -0.5rem; margin-bottom: 1.25rem;">A Backend For Frontend aggregation library</p>
     <p class="hero-sub">
@@ -830,46 +831,87 @@ data.results.nonExistent;                      // ✗ compile error</code></pre>
   <!-- ── INSTALL ── -->
 
   <!-- ANNOTATION -->
-  <section id="annotation" data-nav="Concepts">
-    <h2>@BffIngredient</h2>
-    <p>The only annotation you need. Place it on any mapped controller method — it keeps working independently as before.</p>
-    <div class="code-block">
-      <div class="code-header"><span>usage</span><span class="lang">java</span></div>
-      <pre><code class="language-java">@BffIngredient(
-    recipe         = {"payments", "dashboard"},
-    name           = "getAccount",
-    forwardHeaders = {"Authorization"},
-    customHeaders  = {"X-Feature-Flag"},
-    headerMapping  = {"INHERIT"}
+  <section id="modes" data-nav="Concepts" data-nav-link="Two Modes">
+    <h2>Two Modes</h2>
+    <p>bff-recipe discovers ingredients one of two ways. Pick the one that fits your architecture — the runtime behavior is identical either way.</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin:1.25rem 0; align-items:stretch;">
+      <div class="card" style="border-top:3px solid var(--accent); display:flex; flex-direction:column;">
+        <h3 style="color:var(--accent);">Annotation Mode <span style="font-size:0.7rem; opacity:0.6;">(default)</span></h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">You own the controllers. Add one annotation — they keep working independently.</p>
+        <div class="code-block" style="margin:0; flex:1; display:flex; flex-direction:column;">
+          <div class="code-header"><span>Java</span><span class="lang">java</span></div>
+          <pre style="flex:1;"><code class="language-java">@BffIngredient(
+    recipe = {"payments", "dashboard"},
+    name   = "getAccount"
 )
 @GetMapping("/api/accounts/{accountId}")
 public ResponseEntity&lt;Account&gt; getAccount(
-        @PathVariable String accountId,
-        @RequestHeader("Authorization") String authorization) { ... }</code></pre>
+    @PathVariable String accountId) { ... }
+
+// mode: annotation (default)
+// Repeat for each endpoint you want
+// to include in a recipe.</code></pre>
+        </div>
+      </div>
+      <div class="card" style="border-top:3px solid var(--success); display:flex; flex-direction:column;">
+        <h3 style="color:var(--success);">Config Mode</h3>
+        <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">Can't annotate — third-party JAR, generated code, or another team's module. Define everything in yml.</p>
+        <div class="code-block" style="margin:0; flex:1; display:flex; flex-direction:column;">
+          <div class="code-header"><span>application.yml</span><span class="lang">yaml</span></div>
+          <pre style="flex:1;"><code class="language-yaml">bff-recipe:
+  mode: config
+  ingredients:
+    getAccount:
+      method: GET
+      path: /api/accounts/{accountId}
+    getInvoices:
+      method: GET
+      path: /api/invoices
+  recipes:
+    payments:
+      ingredients: [getAccount, getInvoices]</code></pre>
+        </div>
+      </div>
     </div>
+
+    <table>
+      <tr><th>Aspect</th><th>Annotation</th><th>Config</th></tr>
+      <tr><td>Ingredient discovery</td><td><code>@BffIngredient</code> on methods</td><td><code>bff-recipe.ingredients</code> in yml</td></tr>
+      <tr><td>Recipe definition</td><td><code>recipe</code> attribute on annotation</td><td><code>bff-recipe.recipes</code> in yml</td></tr>
+      <tr><td>Code changes to controllers</td><td>One annotation per method</td><td>Zero</td></tr>
+      <tr><td>Works with code you don't own</td><td>No</td><td>Yes</td></tr>
+      <tr><td>Per-environment recipes</td><td>Conditional beans / profiles</td><td>Spring profile yml</td></tr>
+      <tr><td>Request format, expressions, response</td><td colspan="2" style="text-align:center;">Identical</td></tr>
+      <tr><td>Security, DAG, parallel dispatch</td><td colspan="2" style="text-align:center;">Identical</td></tr>
+    </table>
+
+    <div class="callout"><strong>Pick one.</strong> Set <code>mode: annotation</code> (default) or <code>mode: config</code>. When using config mode, annotations are ignored entirely.</div>
+  </section>
+
+  <hr class="divider" />
+
+  <!-- ANNOTATION DETAILS -->
+  <section id="annotation" data-nav-link="@BffIngredient">
+    <h2>@BffIngredient</h2>
+    <p>Annotation mode details. Place it on any mapped controller method.</p>
 
     <h3 style="margin-top: 1.5rem;">Annotation attributes</h3>
     <table>
-      <tr><th>Attribute</th><th>Default</th><th>Also in yml?</th><th>Description</th></tr>
-      <tr><td>recipe</td><td><code>""</code></td><td>—</td><td>Recipe name(s). Empty = default endpoint at <code>POST /bff</code>. Named recipes get <code>POST /bff/{name}</code>.</td></tr>
-      <tr><td>name</td><td>method name</td><td>—</td><td>ID used in recipe requests to reference this ingredient. Must be unique within a recipe.</td></tr>
-      <tr><td>forwardHeaders</td><td><code>INHERIT</code></td><td>Yes</td><td>Which original request headers to forward. <code>{"*"}</code> all, <code>{}</code> none, list, or regex. Annotation overrides yml.</td></tr>
-      <tr><td>customHeaders</td><td><code>INHERIT</code></td><td>Yes</td><td>Which custom headers the client may inject. Annotation overrides yml.</td></tr>
-      <tr><td>headerMapping</td><td><code>INHERIT</code></td><td>Yes</td><td>Whether prior ingredients' response headers can be mapped in. Annotation overrides yml.</td></tr>
+      <tr><th>Attribute</th><th>Default</th><th>Description</th></tr>
+      <tr><td>recipe</td><td><code>""</code></td><td>Recipe name(s). Empty = default endpoint at <code>POST /bff</code>. Named recipes get <code>POST /bff/{name}</code>.</td></tr>
+      <tr><td>name</td><td>method name</td><td>ID used in recipe requests. Must be unique within a recipe.</td></tr>
+      <tr><td>forwardHeaders</td><td><code>INHERIT</code></td><td>Which original request headers to forward. <code>{"*"}</code> all, <code>{}</code> none, list, or regex.</td></tr>
+      <tr><td>customHeaders</td><td><code>INHERIT</code></td><td>Which custom headers the client may inject.</td></tr>
+      <tr><td>headerMapping</td><td><code>INHERIT</code></td><td>Whether prior ingredients' response headers can be mapped in.</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">Where each setting lives</h3>
+    <h3 style="margin-top: 1.5rem;">Override chain</h3>
     <p>Settings can be specified at multiple levels. Each level can only <strong>narrow</strong> what the level above allows — never widen it.</p>
     <table>
-      <tr><th>Setting</th><th>yml (global)</th><th>yml (per-recipe)</th><th>@BffIngredient</th><th>Recipe JSON (client request)</th></tr>
-      <tr><td>enabled</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
-      <tr><td>base-path</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
-      <tr><td>recipe name</td><td>—</td><td>—</td><td>✓</td><td>— (URL)</td></tr>
-      <tr><td>ingredient name</td><td>—</td><td>—</td><td>✓</td><td>— (id field)</td></tr>
+      <tr><th>Setting</th><th>yml (global)</th><th>yml (per-recipe)</th><th>@BffIngredient</th><th>Recipe JSON</th></tr>
       <tr><td>ingredient-timeout-ms</td><td>✓</td><td>✓ overrides</td><td>—</td><td>—</td></tr>
       <tr><td>recipe-timeout-ms</td><td>✓</td><td>✓ overrides</td><td>—</td><td>—</td></tr>
-      <tr><td>max-ingredients</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
-      <tr><td>parallel-threads</td><td>✓</td><td>—</td><td>—</td><td>—</td></tr>
       <tr><td>forward headers</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
       <tr><td>custom headers</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
       <tr><td>header mapping</td><td>✓</td><td>✓ narrows</td><td>✓ narrows</td><td>✓ narrows</td></tr>
@@ -878,18 +920,18 @@ public ResponseEntity&lt;Account&gt; getAccount(
     </table>
 
     <div class="callout">
-      <strong>Override chain:</strong> Global yml → Per-recipe yml → <code>@BffIngredient</code> annotation → Recipe JSON (client request). Each level narrows the one above. The global blocklist always wins regardless of what any other level says.
+      <strong>Override chain:</strong> Global yml → Per-recipe yml → <code>@BffIngredient</code> → Recipe JSON. Each level narrows the one above. The global blocklist always wins.
     </div>
   </section>
 
   <hr class="divider" />
 
-  <!-- CONFIG -->
-  <section id="config">
-    <h2>Configuration</h2>
-    <p>All settings live under <code>bff-recipe</code> in <code>application.yml</code>. <strong>Configuration is entirely optional</strong> — the defaults work out of the box. Use it to tune timeouts, enable discovery endpoints, or set header policies. Per-recipe overrides narrow the global ceiling.</p>
+  <!-- COMMON CONFIG -->
+  <section id="config" data-nav-link="Common Config">
+    <h2>Common Configuration</h2>
+    <p>These settings apply to <strong>both modes</strong>. All are optional — the defaults work out of the box.</p>
     <div class="code-block">
-      <div class="code-header"><span>application.yml — full reference (all optional)</span><span class="lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <div class="code-header"><span>application.yml — all optional</span><span class="lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
       <pre><code class="language-yaml">bff-recipe:
   enabled: true
   base-path: "/bff"
@@ -914,16 +956,8 @@ public ResponseEntity&lt;Account&gt; getAccount(
       blocked: ["Authorization", "Host"]
     mapping:
       enabled: false
-      blocked-sources: ["Set-Cookie"]
-  recipes:
-    payments:
-      ingredient-timeout-ms: 3000
-      headers:
-        custom:
-          enabled: true
-          allowed: ["X-Idempotency-Key", "X-Feature-Flag"]</code></pre>
+      blocked-sources: ["Set-Cookie"]</code></pre>
     </div>
-    <div class="callout"><strong>Zero config is valid.</strong> Add the dependency, annotate your controllers, and the defaults handle the rest. Everything above is optional tuning.</div>
     <div class="callout"><strong>Headers are case-insensitive.</strong> <code>"Authorization"</code>, <code>"authorization"</code>, and <code>"AUTHORIZATION"</code> all match. Original casing is preserved when forwarding.</div>
   </section>
 
