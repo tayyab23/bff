@@ -17,6 +17,7 @@ cd ..
 # Docs site
 sed -i '' "s|bff-spring-lib:[0-9]*\.[0-9]*\.[0-9]*|bff-spring-lib:${VERSION}|g" docs/index.html
 sed -i '' "s|<version>[0-9]*\.[0-9]*\.[0-9]*</version>|<version>${VERSION}</version>|g" docs/index.html
+sed -i '' "s|&lt;version&gt;[0-9]*\.[0-9]*\.[0-9]*&lt;/version&gt;|\\&lt;version\\&gt;${VERSION}\\&lt;/version\\&gt;|g" docs/index.html
 sed -i '' "s|<small>v[0-9]*\.[0-9]*\.[0-9]*</small>|<small>v${VERSION}</small>|g" docs/index.html
 
 # Root README

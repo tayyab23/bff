@@ -401,7 +401,6 @@
       .drawer-toggle:checked ~ main { margin-left: 0; width: 100%; }
 
       .card-grid { grid-template-columns: 1fr; }
-      .modes-grid { grid-template-columns: 1fr !important; }
     }
 
     /* ── Latency comparison ── */
@@ -485,7 +484,7 @@
     </div>
 
     <p style="font-size: 0.85rem; color: var(--muted); margin-bottom: 1.5rem;">
-      You get a <strong>Spring Boot starter</strong>, a <strong>TypeScript client package</strong>, and built-in <strong>discovery &amp; validation endpoints</strong>.
+      You get a <strong>Spring Boot starter</strong>, a <strong>TypeScript types package</strong>, and built-in <strong>discovery &amp; validation endpoints</strong>.
     </p>
 
     <div class="btn-row">
@@ -678,7 +677,7 @@ public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
       <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;io.github.tayyab23&lt;/groupId&gt;
     &lt;artifactId&gt;bff-spring-lib&lt;/artifactId&gt;
-    &lt;version&gt;0.1.0&lt;/version&gt;
+    &lt;version&gt;1.1.0&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
     </div>
 
@@ -836,8 +835,8 @@ data.results.nonExistent;                      // ✗ compile error</code></pre>
     <h2>Two Modes</h2>
     <p>bff-recipe discovers ingredients one of two ways. Pick the one that fits your architecture — the runtime behavior is identical either way.</p>
 
-    <div class="modes-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin:1.25rem 0; align-items:stretch;">
-      <div class="card" style="border-top:3px solid var(--accent); display:flex; flex-direction:column;">
+    <div class="modes-grid" style="display:flex; flex-wrap:wrap; gap:1.25rem; margin:1.25rem 0;">
+      <div class="card" style="border-top:3px solid var(--accent); display:flex; flex-direction:column; flex:1 1 320px; min-width:0;">
         <h3 style="color:var(--accent);">Annotation Mode <span style="font-size:0.7rem; opacity:0.6;">(default)</span></h3>
         <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">You own the controllers. Add one annotation — they keep working independently.</p>
         <div class="code-block" style="margin:0; flex:1; display:flex; flex-direction:column;">
@@ -855,7 +854,7 @@ public ResponseEntity&lt;Account&gt; getAccount(
 // to include in a recipe.</code></pre>
         </div>
       </div>
-      <div class="card" style="border-top:3px solid var(--success); display:flex; flex-direction:column;">
+      <div class="card" style="border-top:3px solid var(--success); display:flex; flex-direction:column; flex:1 1 320px; min-width:0;">
         <h3 style="color:var(--success);">Config Mode</h3>
         <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">Can't annotate — third-party JAR, generated code, or another team's module. Define everything in yml.</p>
         <div class="code-block" style="margin:0; flex:1; display:flex; flex-direction:column;">
