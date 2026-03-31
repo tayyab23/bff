@@ -1,0 +1,40 @@
+bff-recipe:
+  mode: config
+  enabled: true
+  base-path: "/bff"
+  schema:
+    enabled: true
+  validate:
+    enabled: true
+  debug:
+    enabled: true
+    mask-headers: ["Authorization", "Cookie"]
+  execution:
+    parallel-threads: 10
+    ingredient-timeout-ms: 5000
+    recipe-timeout-ms: 15000
+    max-ingredients: 10
+  headers:
+    forward:
+      enabled: true
+      blocked: ["Host", "Content-Length", "Connection"]
+    custom:
+      enabled: true
+      allowed: ["X-Idempotency-Key"]
+    mapping:
+      enabled: true
+      blocked-sources: ["Set-Cookie"]
+  ingredients:
+    getAccount:
+      method: GET
+      path: /api/accounts/{accountId}
+    getReportSummary:
+      method: GET
+      path: /api/reports/summary/{accountId}
+    getSpendingTrends:
+      method: GET
+      path: /api/reports/trends
+  recipes:
+    reporting:
+      ingredients: [getAccount, getReportSummary, getSpendingTrends]
+      ingredient-timeout-ms: 3000

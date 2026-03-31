@@ -8,7 +8,7 @@ Add one dependency, annotate your existing controllers with `@BffIngredient`, an
 
 | Package | Install | Description |
 |---|---|---|
-| [bff-spring-lib](./bff-spring-lib) | `implementation 'io.github.tayyab23:bff-spring-lib:1.0.0'` | Spring Boot starter — the core library |
+| [bff-spring-lib](./bff-spring-lib) | `implementation 'io.github.tayyab23:bff-spring-lib:1.1.0'` | Spring Boot starter — the core library |
 | [@bff-recipe/types](./bff-types) | `npm install @bff-recipe/types --save-dev` | TypeScript type definitions for frontend consumers |
 | [bff-example](./bff-example) | — | Working example app with integration tests |
 

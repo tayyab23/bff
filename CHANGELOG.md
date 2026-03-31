@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] — 2026-03-30
+
+### Added
+- Config mode: define ingredients and recipes entirely in `application.yml` — no annotations needed
+- `mode: annotation` (default) or `mode: config` in `bff-recipe` properties
+- Config-defined ingredients with `method` and `path`
+- Config-defined recipes with ingredient lists and per-recipe timeout overrides
+- Startup validation: missing paths and unknown ingredient references fail fast
+
 ## [1.0.0] — 2026-03-28
 
 ### Added
