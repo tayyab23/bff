@@ -401,6 +401,7 @@
       .drawer-toggle:checked ~ main { margin-left: 0; width: 100%; }
 
       .card-grid { grid-template-columns: 1fr; }
+      .modes-grid { grid-template-columns: 1fr !important; }
     }
 
     /* ── Latency comparison ── */
@@ -835,7 +836,7 @@ data.results.nonExistent;                      // ✗ compile error</code></pre>
     <h2>Two Modes</h2>
     <p>bff-recipe discovers ingredients one of two ways. Pick the one that fits your architecture — the runtime behavior is identical either way.</p>
 
-    <div style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin:1.25rem 0; align-items:stretch;">
+    <div class="modes-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin:1.25rem 0; align-items:stretch;">
       <div class="card" style="border-top:3px solid var(--accent); display:flex; flex-direction:column;">
         <h3 style="color:var(--accent);">Annotation Mode <span style="font-size:0.7rem; opacity:0.6;">(default)</span></h3>
         <p style="font-size:0.85rem; color:var(--muted); margin-bottom:1rem;">You own the controllers. Add one annotation — they keep working independently.</p>
