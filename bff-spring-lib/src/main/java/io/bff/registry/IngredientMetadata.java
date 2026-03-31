@@ -1,5 +1,6 @@
 package io.bff.registry;
 
+import io.bff.BffRecipeProperties;
 import io.bff.annotation.BffIngredient;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,6 +21,11 @@ public record IngredientMetadata(
         String path = resolvePath(method);
         Class<?> responseType = method.getReturnType();
         return new IngredientMetadata(name, httpMethod, path, method, bean, responseType, ann);
+    }
+
+    public static IngredientMetadata fromConfig(String name, BffRecipeProperties.IngredientDef def) {
+        return new IngredientMetadata(name, def.getMethod().toUpperCase(), def.getPath(),
+                null, null, Object.class, null);
     }
 
     private static String resolveHttpMethod(Method m) {

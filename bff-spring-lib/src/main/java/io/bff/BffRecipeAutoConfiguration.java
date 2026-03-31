@@ -20,8 +20,8 @@ public class BffRecipeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public IngredientRegistry ingredientRegistry(ApplicationContext ctx) {
-        return new IngredientRegistry(ctx);
+    public IngredientRegistry ingredientRegistry(ApplicationContext ctx, BffRecipeProperties props) {
+        return new IngredientRegistry(ctx, props);
     }
 
     @Bean

@@ -3,14 +3,32 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="bff-recipe — a zero-config Spring Boot library that turns existing REST controllers into composable BFF endpoints. One annotation, one request, all your data." />
-  <meta name="keywords" content="Spring Boot, BFF, Backend for Frontend, API aggregation, REST composition, Spring Boot starter, API orchestration, microservices" />
-  <meta property="og:title" content="bff-recipe — API aggregation for Spring Boot" />
-  <meta property="og:description" content="Stop writing custom aggregation controllers. Annotate your existing REST endpoints and compose them into single-request recipes." />
+  <meta name="description" content="bff-recipe is a Spring Boot library that auto-registers BFF aggregation endpoints via annotations. Compose multiple REST APIs into one request — zero config, no GraphQL schema required." />
+  <meta name="keywords" content="spring boot api aggregation, backend for frontend spring boot, BFF pattern java, spring boot reduce api round trips, graphql alternative spring boot, REST composition, Spring Boot starter" />
+  <meta property="og:title" content="bff-recipe — Spring Boot BFF Aggregation Library" />
+  <meta property="og:description" content="One annotation. One request. Compose multiple REST APIs into a single parallel-executed response. No GraphQL schema. No custom endpoints." />
   <meta property="og:url" content="https://tayyab23.github.io/bff/" />
   <meta property="og:type" content="website" />
-  <title>Backend For Frontend — API Recipe Aggregator for Spring Boot</title>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="bff-recipe — Spring Boot BFF Aggregation Library" />
+  <meta name="twitter:description" content="One annotation. One request. Compose multiple REST APIs into a single parallel-executed response." />
+  <link rel="canonical" href="https://tayyab23.github.io/bff/" />
+  <title>bff-recipe — Spring Boot BFF Aggregation Library | Zero Config</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" media="print" onload="this.media='all'" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "bff-recipe",
+    "applicationCategory": "DeveloperApplication",
+    "operatingSystem": "JVM",
+    "description": "A Spring Boot library for BFF API aggregation. Compose multiple REST endpoints into one parallel-executed request using a single annotation.",
+    "url": "https://tayyab23.github.io/bff",
+    "codeRepository": "https://github.com/tayyab23/bff",
+    "programmingLanguage": "Java",
+    "license": "https://opensource.org/licenses/MIT"
+  }
+  </script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -1659,12 +1677,12 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
 
 </main>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
 <script>
   // Build nav from page sections
   (function() {
