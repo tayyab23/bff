@@ -10,6 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.util.Map;
@@ -45,28 +46,25 @@ public class IngredientDispatcher {
                                                jakarta.servlet.http.HttpServletRequest originalRequest) {
         try {
             String resolvedPath = resolvePath(meta.path(), input, completed);
-            String url = meta.proxyUrl().replaceAll("/+$", "") + resolvedPath;
+            String baseUrl = meta.proxyUrl().replaceAll("/+$", "") + resolvedPath;
 
-            // build query string
-            StringBuilder query = new StringBuilder();
+            UriComponentsBuilder uriBuilder = UriComponentsBuilder.fromHttpUrl(baseUrl);
+
+            // query params from map
             if (input.map != null && input.map.query != null) {
                 input.map.query.forEach((k, v) -> {
                     Object resolved = FieldMapper.resolve(v, completed);
-                    if (resolved != null) {
-                        if (!query.isEmpty()) query.append('&');
-                        query.append(k).append('=').append(resolved);
-                    }
+                    if (resolved != null) uriBuilder.queryParam(k, resolved);
                 });
             }
+            // query params from params (those not consumed as path variables)
             if (input.params != null) {
                 input.params.forEach((k, v) -> {
-                    if (!url.contains("{" + k + "}")) {
-                        if (!query.isEmpty()) query.append('&');
-                        query.append(k).append('=').append(v);
-                    }
+                    if (!baseUrl.contains("{" + k + "}")) uriBuilder.queryParam(k, v);
                 });
             }
-            String fullUrl = query.isEmpty() ? url : url + "?" + query;
+
+            URI uri = uriBuilder.build().encode().toUri();
 
             // build body
             byte[] bodyBytes = null;
@@ -82,7 +80,7 @@ public class IngredientDispatcher {
             final byte[] requestBody = bodyBytes;
 
             var spec = restClient.method(org.springframework.http.HttpMethod.valueOf(meta.httpMethod()))
-                    .uri(URI.create(fullUrl))
+                    .uri(uri)
                     .headers(headers -> {
                         // forward headers from original request
                         if (input.headers == null || !Boolean.FALSE.equals(input.headers.forward)) {
