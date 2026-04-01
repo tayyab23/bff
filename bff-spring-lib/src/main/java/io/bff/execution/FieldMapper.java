@@ -38,7 +38,12 @@ public class FieldMapper {
         String fieldPath = m.group(3);
         io.bff.model.IngredientResult result = completed.get(ingredientName);
         if (result == null) return null;
-        Object source = "body".equals(location) ? result.body : null;
+        if ("header".equals(location)) {
+            throw new IllegalArgumentException(
+                "Header references ('" + ingredientName + "::header::${" + fieldPath + "}') are not yet supported. " +
+                "Use body references instead.");
+        }
+        Object source = result.body;
         return extractPath(source, fieldPath);
     }
 
