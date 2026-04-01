@@ -36,7 +36,7 @@ public class RecipeExecutor {
 
         List<List<String>> levels = DagResolver.resolve(recipe.ingredients);
 
-        Map<String, IngredientResult> results = new LinkedHashMap<>();
+        Map<String, IngredientResult> results = new ConcurrentHashMap<>();
         List<Object> executionOrder = new ArrayList<>();
         Set<String> failed = new HashSet<>();
         long deadline = System.currentTimeMillis() + recipeTimeoutMs;

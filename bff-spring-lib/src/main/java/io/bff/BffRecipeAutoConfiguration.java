@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.mvc.method.annotation.*;
 
 @AutoConfiguration
@@ -26,10 +27,17 @@ public class BffRecipeAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
+    public RestClient bffRestClient() {
+        return RestClient.create();
+    }
+
+    @Bean
+    @ConditionalOnMissingBean
     public IngredientDispatcher ingredientDispatcher(RequestMappingHandlerMapping mapping,
                                                      RequestMappingHandlerAdapter adapter,
-                                                     ObjectMapper objectMapper) {
-        return new IngredientDispatcher(mapping, adapter, objectMapper);
+                                                     ObjectMapper objectMapper,
+                                                     RestClient bffRestClient) {
+        return new IngredientDispatcher(mapping, adapter, objectMapper, bffRestClient);
     }
 
     @Bean

@@ -42,23 +42,18 @@ public class IngredientRegistry {
     }
 
     private void loadFromConfig(BffRecipeProperties props) {
-        Map<String, IngredientMetadata> ingredientDefs = new HashMap<>();
-        props.getIngredients().forEach((name, def) -> {
-            if (def.getPath() == null || def.getPath().isBlank()) {
-                throw new IllegalStateException("Ingredient '" + name + "' must have a path");
-            }
-            ingredientDefs.put(name, IngredientMetadata.fromConfig(name, def));
-        });
+        Map<String, BffRecipeProperties.IngredientDef> ingredientDefs = new HashMap<>(props.getIngredients());
 
         props.getRecipes().forEach((recipeName, recipeDef) -> {
+            String recipeProxyUrl = recipeDef.getProxyUrl();
             List<IngredientMetadata> list = new ArrayList<>();
             for (String ingredientName : recipeDef.getIngredients()) {
-                IngredientMetadata meta = ingredientDefs.get(ingredientName);
-                if (meta == null) {
+                BffRecipeProperties.IngredientDef def = ingredientDefs.get(ingredientName);
+                if (def == null) {
                     throw new IllegalStateException(
                         "Recipe '" + recipeName + "' references unknown ingredient '" + ingredientName + "'");
                 }
-                list.add(meta);
+                list.add(IngredientMetadata.fromConfig(ingredientName, def, recipeProxyUrl));
             }
             recipeMap.put(recipeName, list);
         });

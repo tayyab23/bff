@@ -3,11 +3,15 @@ package io.bff.execution;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.bff.model.*;
 import io.bff.registry.IngredientMetadata;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.mock.web.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.client.RestClient;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
+import java.net.URI;
 import java.util.Map;
 
 public class IngredientDispatcher {
@@ -15,18 +19,106 @@ public class IngredientDispatcher {
     private final RequestMappingHandlerMapping handlerMapping;
     private final RequestMappingHandlerAdapter handlerAdapter;
     private final ObjectMapper objectMapper;
+    private final RestClient restClient;
 
     public IngredientDispatcher(RequestMappingHandlerMapping handlerMapping,
                                 RequestMappingHandlerAdapter handlerAdapter,
-                                ObjectMapper objectMapper) {
+                                ObjectMapper objectMapper,
+                                RestClient restClient) {
         this.handlerMapping = handlerMapping;
         this.handlerAdapter = handlerAdapter;
         this.objectMapper = objectMapper;
+        this.restClient = restClient;
     }
 
     public IngredientResult dispatch(IngredientMetadata meta, IngredientInput input,
                                      Map<String, IngredientResult> completed,
                                      jakarta.servlet.http.HttpServletRequest originalRequest) {
+        if (meta.isExternal()) {
+            return dispatchExternal(meta, input, completed, originalRequest);
+        }
+        return dispatchLocal(meta, input, completed, originalRequest);
+    }
+
+    private IngredientResult dispatchExternal(IngredientMetadata meta, IngredientInput input,
+                                               Map<String, IngredientResult> completed,
+                                               jakarta.servlet.http.HttpServletRequest originalRequest) {
+        try {
+            String resolvedPath = resolvePath(meta.path(), input, completed);
+            String url = meta.proxyUrl().replaceAll("/+$", "") + resolvedPath;
+
+            // build query string
+            StringBuilder query = new StringBuilder();
+            if (input.map != null && input.map.query != null) {
+                input.map.query.forEach((k, v) -> {
+                    Object resolved = FieldMapper.resolve(v, completed);
+                    if (resolved != null) {
+                        if (!query.isEmpty()) query.append('&');
+                        query.append(k).append('=').append(resolved);
+                    }
+                });
+            }
+            if (input.params != null) {
+                input.params.forEach((k, v) -> {
+                    if (!url.contains("{" + k + "}")) {
+                        if (!query.isEmpty()) query.append('&');
+                        query.append(k).append('=').append(v);
+                    }
+                });
+            }
+            String fullUrl = query.isEmpty() ? url : url + "?" + query;
+
+            // build body
+            byte[] bodyBytes = null;
+            if (input.body != null || (input.map != null && input.map.body != null)) {
+                java.util.Map<String, Object> bodyMap = new java.util.LinkedHashMap<>();
+                if (input.body instanceof Map<?,?> m) m.forEach((k, v) -> bodyMap.put(k.toString(), v));
+                if (input.map != null && input.map.body != null) {
+                    input.map.body.forEach((k, v) -> bodyMap.put(k, FieldMapper.resolve(v, completed)));
+                }
+                bodyBytes = objectMapper.writeValueAsBytes(bodyMap);
+            }
+
+            final byte[] requestBody = bodyBytes;
+
+            var spec = restClient.method(org.springframework.http.HttpMethod.valueOf(meta.httpMethod()))
+                    .uri(URI.create(fullUrl))
+                    .headers(headers -> {
+                        // forward headers from original request
+                        if (input.headers == null || !Boolean.FALSE.equals(input.headers.forward)) {
+                            originalRequest.getHeaderNames().asIterator().forEachRemaining(name -> {
+                                if (!name.equalsIgnoreCase(HttpHeaders.HOST)
+                                        && !name.equalsIgnoreCase(HttpHeaders.CONTENT_LENGTH)
+                                        && !name.equalsIgnoreCase(HttpHeaders.CONNECTION)) {
+                                    headers.add(name, originalRequest.getHeader(name));
+                                }
+                            });
+                        }
+                        // custom headers
+                        if (input.headers != null && input.headers.custom != null) {
+                            input.headers.custom.forEach(headers::set);
+                        }
+                        headers.setContentType(MediaType.APPLICATION_JSON);
+                    });
+
+            if (requestBody != null) {
+                spec.body(requestBody);
+            }
+
+            return spec.exchange((req, res) -> {
+                byte[] responseBody = res.getBody().readAllBytes();
+                Object body = responseBody.length == 0 ? null
+                        : objectMapper.readValue(responseBody, Object.class);
+                return new IngredientResult(res.getStatusCode().value(), body);
+            });
+        } catch (Exception e) {
+            return new IngredientResult(502, Map.of("error", "ProxyError", "message", e.getMessage()));
+        }
+    }
+
+    private IngredientResult dispatchLocal(IngredientMetadata meta, IngredientInput input,
+                                            Map<String, IngredientResult> completed,
+                                            jakarta.servlet.http.HttpServletRequest originalRequest) {
         try {
             String resolvedPath = resolvePath(meta.path(), input, completed);
             MockHttpServletRequest req = new MockHttpServletRequest(meta.httpMethod(), resolvedPath);

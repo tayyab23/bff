@@ -13,19 +13,23 @@ public record IngredientMetadata(
     Method method,
     Object bean,
     Class<?> responseType,
-    BffIngredient annotation
+    BffIngredient annotation,
+    String proxyUrl
 ) {
+    public boolean isExternal() { return proxyUrl != null && !proxyUrl.isBlank(); }
+
     public static IngredientMetadata from(Method method, BffIngredient ann, Object bean) {
         String name = ann.name().isEmpty() ? method.getName() : ann.name();
         String httpMethod = resolveHttpMethod(method);
         String path = resolvePath(method);
         Class<?> responseType = method.getReturnType();
-        return new IngredientMetadata(name, httpMethod, path, method, bean, responseType, ann);
+        return new IngredientMetadata(name, httpMethod, path, method, bean, responseType, ann, null);
     }
 
-    public static IngredientMetadata fromConfig(String name, BffRecipeProperties.IngredientDef def) {
+    public static IngredientMetadata fromConfig(String name, BffRecipeProperties.IngredientDef def, String recipeProxyUrl) {
+        String proxyUrl = def.getProxyUrl() != null ? def.getProxyUrl() : recipeProxyUrl;
         return new IngredientMetadata(name, def.getMethod().toUpperCase(), def.getPath(),
-                null, null, Object.class, null);
+                null, null, Object.class, null, proxyUrl);
     }
 
     private static String resolveHttpMethod(Method m) {

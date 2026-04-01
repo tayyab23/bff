@@ -37,17 +37,21 @@ public class BffRecipeProperties {
     public static class IngredientDef {
         private String method = "GET";
         private String path;
+        private String proxyUrl;
 
         public String getMethod() { return method; }
         public void setMethod(String method) { this.method = method; }
         public String getPath() { return path; }
         public void setPath(String path) { this.path = path; }
+        public String getProxyUrl() { return proxyUrl; }
+        public void setProxyUrl(String proxyUrl) { this.proxyUrl = proxyUrl; }
     }
 
     public static class RecipeDef {
         private List<String> ingredients = List.of();
         private Long ingredientTimeoutMs;
         private Long recipeTimeoutMs;
+        private String proxyUrl;
 
         public List<String> getIngredients() { return ingredients; }
         public void setIngredients(List<String> ingredients) { this.ingredients = ingredients; }
@@ -55,6 +59,8 @@ public class BffRecipeProperties {
         public void setIngredientTimeoutMs(Long ingredientTimeoutMs) { this.ingredientTimeoutMs = ingredientTimeoutMs; }
         public Long getRecipeTimeoutMs() { return recipeTimeoutMs; }
         public void setRecipeTimeoutMs(Long recipeTimeoutMs) { this.recipeTimeoutMs = recipeTimeoutMs; }
+        public String getProxyUrl() { return proxyUrl; }
+        public void setProxyUrl(String proxyUrl) { this.proxyUrl = proxyUrl; }
     }
 
     public static class Schema {

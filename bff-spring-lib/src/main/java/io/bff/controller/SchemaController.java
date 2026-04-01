@@ -21,11 +21,12 @@ public class SchemaController {
         result.put("recipe", recipe);
         Map<String, Object> ingredientMap = new LinkedHashMap<>();
         for (IngredientMetadata m : ingredients) {
-            ingredientMap.put(m.name(), Map.of(
-                "method", m.httpMethod(),
-                "path", m.path(),
-                "responseType", m.responseType().getSimpleName()
-            ));
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("method", m.httpMethod());
+            entry.put("path", m.path());
+            entry.put("responseType", m.responseType().getSimpleName());
+            if (m.isExternal()) entry.put("proxyUrl", m.proxyUrl());
+            ingredientMap.put(m.name(), entry);
         }
         result.put("ingredients", ingredientMap);
         return result;
