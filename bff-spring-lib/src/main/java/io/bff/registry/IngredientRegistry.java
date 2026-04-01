@@ -50,6 +50,13 @@ public class IngredientRegistry {
     private void loadFromConfig(BffRecipeProperties props) {
         Map<String, BffRecipeProperties.IngredientDef> ingredientDefs = new HashMap<>(props.getIngredients());
 
+        // Validate all ingredient definitions upfront
+        ingredientDefs.forEach((name, def) -> {
+            if (def.getPath() == null || def.getPath().isBlank()) {
+                throw new IllegalStateException("Ingredient '" + name + "' must have a path");
+            }
+        });
+
         props.getRecipes().forEach((recipeName, recipeDef) -> {
             String recipeProxyUrl = recipeDef.getProxyUrl();
             List<IngredientMetadata> list = new ArrayList<>();
