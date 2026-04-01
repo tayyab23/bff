@@ -4,12 +4,13 @@ import io.bff.BffRecipeProperties;
 import io.bff.model.*;
 import io.bff.registry.IngredientMetadata;
 import io.bff.registry.IngredientRegistry;
+import org.springframework.beans.factory.DisposableBean;
 
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
-public class RecipeExecutor {
+public class RecipeExecutor implements DisposableBean {
 
     private final IngredientRegistry registry;
     private final IngredientDispatcher dispatcher;
@@ -118,5 +119,16 @@ public class RecipeExecutor {
 
     private void cancelRemaining(List<? extends Future<?>> futures) {
         futures.forEach(f -> f.cancel(true));
+    }
+
+    @Override
+    public void destroy() {
+        pool.shutdown();
+        try {
+            if (!pool.awaitTermination(5, TimeUnit.SECONDS)) pool.shutdownNow();
+        } catch (InterruptedException e) {
+            pool.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
