@@ -5,6 +5,7 @@ import io.bff.controller.*;
 import io.bff.execution.*;
 import io.bff.registry.IngredientRegistry;
 import io.bff.validation.RecipeValidator;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -26,7 +27,7 @@ public class BffRecipeAutoConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean
+    @ConditionalOnMissingBean(name = "bffRestClient")
     public RestClient bffRestClient() {
         return RestClient.create();
     }
@@ -36,7 +37,7 @@ public class BffRecipeAutoConfiguration {
     public IngredientDispatcher ingredientDispatcher(RequestMappingHandlerMapping mapping,
                                                      RequestMappingHandlerAdapter adapter,
                                                      ObjectMapper objectMapper,
-                                                     RestClient bffRestClient) {
+                                                     @Qualifier("bffRestClient") RestClient bffRestClient) {
         return new IngredientDispatcher(mapping, adapter, objectMapper, bffRestClient);
     }
 
