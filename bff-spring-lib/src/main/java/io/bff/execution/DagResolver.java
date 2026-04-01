@@ -38,22 +38,25 @@ public class DagResolver {
         Set<String> visited = new HashSet<>();
         Set<String> stack = new HashSet<>();
         for (String node : deps.keySet()) {
-            if (dfs(node, deps, visited, stack, new ArrayList<>())) {
-                throw new IllegalArgumentException("Circular dependency detected");
+            List<String> path = new ArrayList<>();
+            if (dfs(node, deps, visited, stack, path)) {
+                throw new IllegalArgumentException("Circular dependency: " + String.join(" → ", path));
             }
         }
     }
 
     private static boolean dfs(String node, Map<String, Set<String>> deps,
                                 Set<String> visited, Set<String> stack, List<String> path) {
-        if (stack.contains(node)) return true;
+        if (stack.contains(node)) { path.add(node); return true; }
         if (visited.contains(node)) return false;
         visited.add(node);
         stack.add(node);
+        path.add(node);
         for (String dep : deps.getOrDefault(node, Set.of())) {
             if (dfs(dep, deps, visited, stack, path)) return true;
         }
         stack.remove(node);
+        path.remove(path.size() - 1);
         return false;
     }
 }

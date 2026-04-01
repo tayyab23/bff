@@ -48,7 +48,17 @@ public class RecipeController {
             return ResponseEntity.badRequest().body(response);
         }
 
-        RecipeResponse response = executor.execute(recipe, request, httpRequest);
+        RecipeResponse response;
+        try {
+            response = executor.execute(recipe, request, httpRequest);
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            var errorResponse = new RecipeResponse();
+            errorResponse.results = Map.of();
+            errorResponse.executionOrder = java.util.List.of();
+            errorResponse.errors = java.util.List.of(e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+
         boolean anyFailed = response.results.values().stream().anyMatch(r -> r.status >= 400);
         int status = anyFailed ? 207 : 200;
         return ResponseEntity.status(status).body(response);
