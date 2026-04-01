@@ -6,6 +6,5 @@ import java.util.List;
 public class RecipeResponse {
     public Map<String, IngredientResult> results;
     public List<Object> executionOrder;
-    public Map<String, DebugInfo> debug;
     public List<String> errors;
 }
