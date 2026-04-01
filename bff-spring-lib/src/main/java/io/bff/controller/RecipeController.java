@@ -44,6 +44,7 @@ public class RecipeController {
             var response = new RecipeResponse();
             response.results = Map.of();
             response.executionOrder = java.util.List.of();
+            response.errors = errors;
             return ResponseEntity.badRequest().body(response);
         }
 
