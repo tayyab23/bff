@@ -5,6 +5,8 @@ import io.bff.model.*;
 import io.bff.registry.IngredientMetadata;
 import io.bff.registry.IngredientRegistry;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -37,6 +39,9 @@ public class RecipeExecutor implements DisposableBean {
 
         List<List<String>> levels = DagResolver.resolve(recipe.ingredients);
 
+        // Capture SecurityContext on the request thread — pool threads don't inherit it
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+
         Map<String, IngredientResult> results = new ConcurrentHashMap<>();
         List<Object> executionOrder = new ArrayList<>();
         Set<String> failed = new HashSet<>();
@@ -67,10 +72,15 @@ public class RecipeExecutor implements DisposableBean {
 
             List<Future<Map.Entry<String, IngredientResult>>> futures = runnable.stream().map(id ->
                 pool.submit(() -> {
-                    IngredientMetadata meta = metaMap.get(id);
-                    IngredientInput input = inputMap.get(id);
-                    IngredientResult result = dispatcher.dispatch(meta, input, results, originalRequest);
-                    return Map.entry(id, result);
+                    SecurityContextHolder.setContext(securityContext);
+                    try {
+                        IngredientMetadata meta = metaMap.get(id);
+                        IngredientInput input = inputMap.get(id);
+                        IngredientResult result = dispatcher.dispatch(meta, input, results, originalRequest);
+                        return Map.entry(id, result);
+                    } finally {
+                        SecurityContextHolder.clearContext();
+                    }
                 })
             ).collect(Collectors.toList());
 
