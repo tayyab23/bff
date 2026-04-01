@@ -4,6 +4,8 @@ import io.bff.BffRecipeProperties;
 import io.bff.annotation.BffIngredient;
 import io.bff.annotation.BffIngredients;
 import org.springframework.context.ApplicationContext;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -22,7 +24,11 @@ public class IngredientRegistry {
     }
 
     private void discoverFromAnnotations(ApplicationContext ctx) {
-        ctx.getBeansOfType(Object.class).values().forEach(bean -> {
+        // Only scan @Controller/@RestController beans — not every bean in the context
+        Map<String, Object> controllers = new HashMap<>();
+        controllers.putAll(ctx.getBeansWithAnnotation(RestController.class));
+        controllers.putAll(ctx.getBeansWithAnnotation(Controller.class));
+        controllers.values().forEach(bean -> {
             for (Method method : bean.getClass().getDeclaredMethods()) {
                 List<BffIngredient> annotations = new ArrayList<>();
                 if (method.isAnnotationPresent(BffIngredients.class)) {
