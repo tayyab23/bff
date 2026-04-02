@@ -330,6 +330,26 @@
       color: var(--muted);
       margin: 0;
     }
+    details ul {
+      padding: 0 1rem 0.85rem 2.2rem;
+      margin: 0;
+      list-style: none;
+    }
+    details li {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.8;
+      position: relative;
+      padding-left: 0.2rem;
+    }
+    details li::before {
+      content: '→';
+      color: var(--accent);
+      position: absolute;
+      left: -1.2rem;
+      font-size: 0.75rem;
+    }
+    details li strong { color: var(--text); }
 
     .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
 
@@ -437,7 +457,7 @@
 <nav id="sidebar">
   <div class="logo">
     <span>👨‍🍳 bff-recipe</span>
-    <small>v1.1.0</small>
+    <small>v1.2.0</small>
   </div>
   <div id="nav-links"></div>
 </nav>
@@ -668,7 +688,7 @@ public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
     <div class="code-block">
       <div class="code-header"><span>build.gradle</span><span class="lang">groovy</span></div>
       <pre><code class="language-groovy">dependencies {
-    implementation 'io.github.tayyab23:bff-spring-lib:1.1.0'
+    implementation 'io.github.tayyab23:bff-spring-lib:1.2.0'
 }</code></pre>
     </div>
 
@@ -677,7 +697,7 @@ public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
       <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;io.github.tayyab23&lt;/groupId&gt;
     &lt;artifactId&gt;bff-spring-lib&lt;/artifactId&gt;
-    &lt;version&gt;1.1.0&lt;/version&gt;
+    &lt;version&gt;1.2.0&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
     </div>
 
@@ -891,6 +911,52 @@ public ResponseEntity&lt;Account&gt; getAccount(
 
   <hr class="divider" />
 
+  <!-- PROXY MODE -->
+  <section id="proxy" data-nav-link="Proxy Dispatch">
+    <h2>Proxy Dispatch</h2>
+    <p>When your APIs live in separate services — other Lambdas, ECS tasks, or third-party systems — use <code>proxy-url</code> to aggregate across them without writing proxy controllers. The BFF becomes a dedicated aggregation layer that forwards requests to external services.</p>
+
+    <div class="code-block">
+      <div class="code-header"><span>application.yml — proxy mode</span><span class="lang">yaml</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code class="language-yaml">bff-recipe:
+  mode: config
+  ingredients:
+    getAccount:
+      method: GET
+      path: /api/accounts/{accountId}
+    getInvoices:
+      method: GET
+      path: /api/invoices
+    getShipping:
+      method: GET
+      path: /api/shipments/{orderId}
+      proxy-url: ${SHIPPING_SERVICE_URL:http://localhost:8082}
+  recipes:
+    payments:
+      proxy-url: ${API_BASE_URL:http://localhost:8080}
+      ingredients: [getAccount, getInvoices, getShipping]</code></pre>
+    </div>
+
+    <h3 style="margin-top: 1.5rem;">Resolution order</h3>
+    <p>Ingredient <code>proxy-url</code> → Recipe <code>proxy-url</code> → local in-process dispatch. Same override chain philosophy as headers — each level narrows.</p>
+
+    <table>
+      <tr><th>Ingredient</th><th>Dispatches to</th><th>Why</th></tr>
+      <tr><td>getAccount</td><td><code>${API_BASE_URL}/api/accounts/{accountId}</code></td><td>No ingredient proxy-url → falls back to recipe proxy-url</td></tr>
+      <tr><td>getInvoices</td><td><code>${API_BASE_URL}/api/invoices</code></td><td>Same — recipe-level default</td></tr>
+      <tr><td>getShipping</td><td><code>${SHIPPING_SERVICE_URL}/api/shipments/{orderId}</code></td><td>Ingredient proxy-url overrides recipe</td></tr>
+    </table>
+
+    <div class="callout"><strong>Environment-driven URLs.</strong> Use Spring property placeholders (<code>${ENV_VAR:default}</code>) in <code>proxy-url</code>. Set different values per environment — no code changes, no rebuilds. Works with env vars, Spring profiles, AWS Parameter Store, or any Spring property source.</div>
+
+    <h3 style="margin-top: 1.5rem;">Mixing local and proxy</h3>
+    <p>Ingredients without a <code>proxy-url</code> (and no recipe-level default) dispatch locally through the Spring MVC chain. You can mix both in the same recipe — some controllers in-process, others proxied to external services.</p>
+
+    <div class="callout" style="border-left-color: var(--warning);"><strong>Proxy errors return 502.</strong> If the external service is unreachable or returns a non-parseable response, the ingredient result will have <code>status: 502</code> with <code>{"error": "ProxyError", "message": "..."}</code>.</div>
+  </section>
+
+  <hr class="divider" />
+
   <!-- ANNOTATION DETAILS -->
   <section id="annotation" data-nav-link="@BffIngredient">
     <h2>@BffIngredient</h2>
@@ -980,6 +1046,15 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>false (default)</td><td>Skip dependents (422). Continue independent ingredients.</td></tr>
       <tr><td>true</td><td>Abort all remaining. Already-completed results still returned.</td></tr>
     </table>
+
+    <h3 style="margin-top: 1.5rem;">Thread pool</h3>
+    <p>Ingredients within a level run in parallel on a shared fixed thread pool. The pool is shared across all concurrent recipe requests.</p>
+    <table>
+      <tr><th>parallel-threads</th><th>Behaviour</th></tr>
+      <tr><td>10 (default)</td><td>Fixed thread pool with 10 threads. Size for your expected concurrency.</td></tr>
+      <tr><td>0</td><td>No thread pool. Ingredients execute sequentially on the request thread. Good for Lambda, debugging, or recipes with 1–2 ingredients.</td></tr>
+    </table>
+    <div class="callout" style="border-left-color: var(--warning);"><strong>Sizing matters under load.</strong> With <code>parallel-threads: 10</code>, 10 concurrent recipe requests each with 5 parallel ingredients = 50 tasks competing for 10 threads. Ingredients queue behind unrelated recipes. Size the pool for your peak concurrency, or set to <code>0</code> for sequential execution.</div>
   </section>
 
   <hr class="divider" />
@@ -1331,114 +1406,6 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
 
   <hr class="divider" />
 
-  <!-- ── WALKTHROUGH ── -->
-  <section id="walkthrough" data-nav="Reference">
-    <h2>Walkthrough</h2>
-    <p>A more detailed example — a payments page that needs account info, invoices, and payment methods composed into one request with dependency wiring.</p>
-
-    <ol class="steps">
-      <li>
-        <div class="step-body">
-          <h3>Annotate your existing controllers</h3>
-          <p>Add <code>@BffIngredient</code> to the methods you want to compose. They keep working exactly as before.</p>
-        </div>
-      </li>
-    </ol>
-
-    <div class="code-block">
-      <div class="code-header"><span>AccountController.java</span><span class="lang">java</span></div>
-      <pre><code class="language-java">@BffIngredient(recipe = "payments", name = "getAccount",
-               forwardHeaders = {"Authorization"})
-@GetMapping("/api/accounts/{accountId}")
-public ResponseEntity&lt;Account&gt; getAccount(
-        @PathVariable String accountId,
-        @RequestHeader("Authorization") String authorization) {
-    // your existing logic unchanged
-}</code></pre>
-    </div>
-
-    <div class="code-block">
-      <div class="code-header"><span>InvoiceController.java</span><span class="lang">java</span></div>
-      <pre><code class="language-java">@BffIngredient(recipe = "payments", name = "getInvoices",
-               forwardHeaders = {"Authorization"})
-@GetMapping("/api/invoices")
-public ResponseEntity&lt;InvoiceList&gt; getInvoices(
-        @RequestParam String billingGroupId,
-        @RequestHeader("Authorization") String authorization) {
-    // billingGroupId will be wired in from getAccount's response
-}</code></pre>
-    </div>
-
-    <ol class="steps" style="counter-reset: step 1">
-      <li>
-        <div class="step-body">
-          <h3>Send a recipe request from your frontend</h3>
-          <p>One POST to <code>/bff/payments</code>. The <code>::</code> syntax wires <code>getAccount</code>'s response into <code>getInvoices</code>'s query param.</p>
-        </div>
-      </li>
-    </ol>
-
-    <div class="code-block">
-      <div class="code-header"><span>POST /bff/payments</span><span class="lang">json</span></div>
-      <pre><code class="language-json">{
-  "ingredients": [
-    {
-      "id": "getAccount",
-      "params": { "accountId": "acc-123" }
-    },
-    {
-      "id": "getInvoices",
-      "map": {
-        "query": {
-          "billingGroupId": "getAccount::body::${billingGroupId}"
-        }
-      }
-    },
-    {
-      "id": "getPaymentMethods",
-      "map": {
-        "query": {
-          "customerId": "getAccount::body::${customerId}"
-        }
-      }
-    }
-  ]
-}</code></pre>
-    </div>
-
-    <ol class="steps" style="counter-reset: step 2">
-      <li>
-        <div class="step-body">
-          <h3>Get everything back in one response</h3>
-          <p><code>getInvoices</code> and <code>getPaymentMethods</code> ran in parallel after <code>getAccount</code> completed.</p>
-        </div>
-      </li>
-    </ol>
-
-    <div class="code-block">
-      <div class="code-header"><span>Response — HTTP 200</span><span class="lang">json</span></div>
-      <pre><code class="language-json">{
-  "executionOrder": ["getAccount", ["getInvoices", "getPaymentMethods"]],
-  "results": {
-    "getAccount": {
-      "status": 200,
-      "body": { "accountId": "acc-123", "billingGroupId": "bg-acc-123", "customerId": "cust-acc-123", "name": "BFF" }
-    },
-    "getInvoices": {
-      "status": 200,
-      "body": { "items": [{ "id": "inv-001", "amount": 249.99, "status": "UNPAID" }], "total": 249.99 }
-    },
-    "getPaymentMethods": {
-      "status": 200,
-      "body": { "methods": [{ "id": "pm-visa-4242", "type": "CARD", "last4": "4242", "isDefault": true }] }
-    }
-  }
-}</code></pre>
-    </div>
-  </section>
-
-  <hr class="divider" />
-
   <!-- TS TYPES -->
   <section id="ts-types">
     <h2>TypeScript Types</h2>
@@ -1668,8 +1635,24 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
     </details>
 
     <details>
-      <summary>Why not support cross-service aggregation?</summary>
-      <p>bff-recipe uses in-process dispatch — it calls controllers within the same JVM. This makes it a perfect fit for monoliths, modular monoliths, or a dedicated aggregation service where you proxy downstream APIs through local controllers. Cross-service aggregation introduces network calls, service discovery, circuit breakers, and distributed tracing concerns that belong in an API gateway or service mesh.</p>
+      <summary>Can I aggregate across multiple services?</summary>
+      <p>Yes — as of v1.2.0, <code>proxy-url</code> in config mode lets you point ingredients at external services. You get the same DAG execution, expression wiring, and parallel dispatch — but the HTTP calls go over the network instead of in-process.</p>
+      <p><strong>What proxy mode handles:</strong></p>
+      <ul>
+        <li>Network dispatch via RestClient</li>
+        <li>Header forwarding (including trace headers)</li>
+        <li>Per-ingredient and per-recipe timeouts</li>
+        <li>URL encoding</li>
+        <li>Environment-driven URLs via Spring property placeholders</li>
+      </ul>
+      <p><strong>What proxy mode does not handle:</strong></p>
+      <ul>
+        <li><strong>Service discovery</strong> — you provide static URLs. Use env vars or Spring Cloud for dynamic resolution.</li>
+        <li><strong>Circuit breakers</strong> — a failing service returns 502 on every attempt. Add Resilience4j in your app if you need circuit breaking.</li>
+        <li><strong>Retry logic</strong> — one shot per ingredient. Retries should be idempotency-aware and belong in your infrastructure.</li>
+        <li><strong>RestClient connect/read timeouts</strong> — the ingredient timeout kills the future, but a hung TCP connection sits until then. Configure a custom <code>bffRestClient</code> bean with explicit timeouts if this matters.</li>
+      </ul>
+      <p>This is a lightweight aggregation proxy, not a service mesh. It eliminates the boilerplate of writing proxy controllers by hand. For service discovery, circuit breaking, and advanced resilience — layer those into your Spring app the way you normally would.</p>
     </details>
 
     <details>
