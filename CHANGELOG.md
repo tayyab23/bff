@@ -2,6 +2,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.0] — 2026-04-01
+
+### Added
+- Proxy dispatch: `proxy-url` on ingredients and recipes for external service aggregation
+- Recipe-level `proxy-url` as shared base URL, ingredient-level override
+- `proxy-url` supports Spring property placeholders (`${ENV_VAR:default}`)
+- Sequential execution mode: `parallel-threads: 0` disables the thread pool
+- Validation errors now included in 400 response body (`response.errors`)
+- 404 response for unknown recipe names (was 400)
+- Cycle detection error messages include the full cycle path
+
+### Fixed
+- Thread safety: results map now uses ConcurrentHashMap (was LinkedHashMap read from pool threads)
+- SecurityContext propagation: captured on request thread, set/cleared on pool threads
+- URL encoding: proxy query params properly encoded via UriComponentsBuilder
+- RestClient bean qualified to avoid collision with user-defined RestClient beans
+- Annotation scan narrowed to @Controller/@RestController (was scanning all beans)
+- Config-mode path validation restored (lost during proxy-url refactor)
+- DAG cycle exceptions caught as 400 (was bubbling as 500)
+- `::header::` expressions now throw clear error (was silently returning null)
+- Thread pool shut down on context close via DisposableBean
+- Schema endpoint returns 404 for unknown recipes (was 200 with empty ingredients)
+
+### Removed
+- Dead `DebugInfo` class (was never populated)
+- Dead `IngredientResult.type` field (was never set)
+
 ## [1.1.0] — 2026-03-30
 
 ### Added
