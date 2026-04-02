@@ -16,7 +16,7 @@ public class RecipeExecutor implements DisposableBean {
 
     private final IngredientRegistry registry;
     private final IngredientDispatcher dispatcher;
-    private final ExecutorService pool;
+    private final ExecutorService pool; // null when parallel-threads=0
     private final long ingredientTimeoutMs;
     private final long recipeTimeoutMs;
 
@@ -24,7 +24,8 @@ public class RecipeExecutor implements DisposableBean {
                           BffRecipeProperties.Execution config) {
         this.registry = registry;
         this.dispatcher = dispatcher;
-        this.pool = Executors.newFixedThreadPool(config.getParallelThreads());
+        this.pool = config.getParallelThreads() > 0
+                ? Executors.newFixedThreadPool(config.getParallelThreads()) : null;
         this.ingredientTimeoutMs = config.getIngredientTimeoutMs();
         this.recipeTimeoutMs = config.getRecipeTimeoutMs();
     }
@@ -39,7 +40,6 @@ public class RecipeExecutor implements DisposableBean {
 
         List<List<String>> levels = DagResolver.resolve(recipe.ingredients);
 
-        // Capture SecurityContext on the request thread — pool threads don't inherit it
         SecurityContext securityContext = SecurityContextHolder.getContext();
 
         Map<String, IngredientResult> results = new ConcurrentHashMap<>();
@@ -70,39 +70,11 @@ public class RecipeExecutor implements DisposableBean {
             if (runnable.isEmpty()) continue;
             executionOrder.add(runnable.size() == 1 ? runnable.get(0) : runnable);
 
-            List<Future<Map.Entry<String, IngredientResult>>> futures = runnable.stream().map(id ->
-                pool.submit(() -> {
-                    SecurityContextHolder.setContext(securityContext);
-                    try {
-                        IngredientMetadata meta = metaMap.get(id);
-                        IngredientInput input = inputMap.get(id);
-                        IngredientResult result = dispatcher.dispatch(meta, input, results, originalRequest);
-                        return Map.entry(id, result);
-                    } finally {
-                        SecurityContextHolder.clearContext();
-                    }
-                })
-            ).collect(Collectors.toList());
-
-            for (Future<Map.Entry<String, IngredientResult>> f : futures) {
-                try {
-                    long remaining = Math.min(ingredientTimeoutMs, deadline - System.currentTimeMillis());
-                    Map.Entry<String, IngredientResult> entry = f.get(Math.max(remaining, 1), TimeUnit.MILLISECONDS);
-                    results.put(entry.getKey(), entry.getValue());
-                    if (entry.getValue().status >= 400) {
-                        failed.add(entry.getKey());
-                        if (recipe.failFast) { cancelRemaining(futures); break; }
-                    }
-                } catch (TimeoutException e) {
-                    String id = runnable.get(futures.indexOf(f));
-                    results.put(id, new IngredientResult(504, Map.of("error", "IngredientTimeout", "message", "Timed out after " + ingredientTimeoutMs + "ms")));
-                    failed.add(id);
-                    f.cancel(true);
-                } catch (Exception e) {
-                    String id = runnable.get(futures.indexOf(f));
-                    results.put(id, new IngredientResult(500, Map.of("error", e.getMessage())));
-                    failed.add(id);
-                }
+            if (pool == null) {
+                executeSequential(runnable, metaMap, inputMap, results, failed, recipe.failFast, originalRequest);
+            } else {
+                executeParallel(runnable, metaMap, inputMap, results, failed, recipe.failFast,
+                        originalRequest, securityContext, deadline);
             }
         }
 
@@ -110,6 +82,59 @@ public class RecipeExecutor implements DisposableBean {
         response.results = results;
         response.executionOrder = executionOrder;
         return response;
+    }
+
+    private void executeSequential(List<String> runnable, Map<String, IngredientMetadata> metaMap,
+                                    Map<String, IngredientInput> inputMap,
+                                    Map<String, IngredientResult> results, Set<String> failed,
+                                    boolean failFast, jakarta.servlet.http.HttpServletRequest originalRequest) {
+        for (String id : runnable) {
+            IngredientResult result = dispatcher.dispatch(metaMap.get(id), inputMap.get(id), results, originalRequest);
+            results.put(id, result);
+            if (result.status >= 400) {
+                failed.add(id);
+                if (failFast) break;
+            }
+        }
+    }
+
+    private void executeParallel(List<String> runnable, Map<String, IngredientMetadata> metaMap,
+                                  Map<String, IngredientInput> inputMap,
+                                  Map<String, IngredientResult> results, Set<String> failed,
+                                  boolean failFast, jakarta.servlet.http.HttpServletRequest originalRequest,
+                                  SecurityContext securityContext, long deadline) {
+        List<Future<Map.Entry<String, IngredientResult>>> futures = runnable.stream().map(id ->
+            pool.submit(() -> {
+                SecurityContextHolder.setContext(securityContext);
+                try {
+                    IngredientResult result = dispatcher.dispatch(metaMap.get(id), inputMap.get(id), results, originalRequest);
+                    return Map.entry(id, result);
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
+            })
+        ).collect(Collectors.toList());
+
+        for (Future<Map.Entry<String, IngredientResult>> f : futures) {
+            try {
+                long remaining = Math.min(ingredientTimeoutMs, deadline - System.currentTimeMillis());
+                Map.Entry<String, IngredientResult> entry = f.get(Math.max(remaining, 1), TimeUnit.MILLISECONDS);
+                results.put(entry.getKey(), entry.getValue());
+                if (entry.getValue().status >= 400) {
+                    failed.add(entry.getKey());
+                    if (failFast) { cancelRemaining(futures); break; }
+                }
+            } catch (TimeoutException e) {
+                String id = runnable.get(futures.indexOf(f));
+                results.put(id, new IngredientResult(504, Map.of("error", "IngredientTimeout", "message", "Timed out after " + ingredientTimeoutMs + "ms")));
+                failed.add(id);
+                f.cancel(true);
+            } catch (Exception e) {
+                String id = runnable.get(futures.indexOf(f));
+                results.put(id, new IngredientResult(500, Map.of("error", e.getMessage())));
+                failed.add(id);
+            }
+        }
     }
 
     private boolean hasFailed(String id, Map<String, IngredientInput> inputMap, Set<String> failed) {
@@ -133,12 +158,14 @@ public class RecipeExecutor implements DisposableBean {
 
     @Override
     public void destroy() {
-        pool.shutdown();
-        try {
-            if (!pool.awaitTermination(5, TimeUnit.SECONDS)) pool.shutdownNow();
-        } catch (InterruptedException e) {
-            pool.shutdownNow();
-            Thread.currentThread().interrupt();
+        if (pool != null) {
+            pool.shutdown();
+            try {
+                if (!pool.awaitTermination(5, TimeUnit.SECONDS)) pool.shutdownNow();
+            } catch (InterruptedException e) {
+                pool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
