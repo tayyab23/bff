@@ -1,6 +1,7 @@
 package io.bff.controller;
 
 import io.bff.registry.*;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -15,7 +16,10 @@ public class SchemaController {
     }
 
     @GetMapping("${bff-recipe.base-path:/bff}/{recipe}/schema")
-    public Map<String, Object> schema(@PathVariable String recipe) {
+    public ResponseEntity<Map<String, Object>> schema(@PathVariable String recipe) {
+        if (!registry.getAll().containsKey(recipe)) {
+            return ResponseEntity.status(404).body(Map.of("error", "Recipe not found: " + recipe));
+        }
         List<IngredientMetadata> ingredients = registry.getIngredients(recipe);
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("recipe", recipe);
@@ -29,6 +33,6 @@ public class SchemaController {
             ingredientMap.put(m.name(), entry);
         }
         result.put("ingredients", ingredientMap);
-        return result;
+        return ResponseEntity.ok(result);
     }
 }

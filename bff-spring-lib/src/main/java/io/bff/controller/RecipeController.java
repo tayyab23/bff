@@ -39,6 +39,14 @@ public class RecipeController {
 
     private ResponseEntity<RecipeResponse> doExecute(String recipe, Recipe request,
                                                       HttpServletRequest httpRequest) {
+        if (!registry.getAll().containsKey(recipe)) {
+            var response = new RecipeResponse();
+            response.results = Map.of();
+            response.executionOrder = java.util.List.of();
+            response.errors = java.util.List.of("Recipe not found: " + (recipe.isEmpty() ? "(default)" : recipe));
+            return ResponseEntity.status(404).body(response);
+        }
+
         var errors = validator.validate(recipe, request);
         if (!errors.isEmpty()) {
             var response = new RecipeResponse();
