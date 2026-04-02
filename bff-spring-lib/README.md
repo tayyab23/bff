@@ -7,7 +7,7 @@ The core Spring Boot starter for [bff-recipe](https://tayyab23.github.io/bff). A
 ### Gradle
 
 ```groovy
-implementation 'io.github.tayyab23:bff-spring-lib:1.1.0'
+implementation 'io.github.tayyab23:bff-spring-lib:1.2.0'
 ```
 
 ### Maven
@@ -16,7 +16,7 @@ implementation 'io.github.tayyab23:bff-spring-lib:1.1.0'
 <dependency>
   <groupId>io.github.tayyab23</groupId>
   <artifactId>bff-spring-lib</artifactId>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
 </dependency>
 ```
 
