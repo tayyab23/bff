@@ -292,9 +292,9 @@
     .steps li .step-body p { font-size: 0.85rem; margin: 0; }
 
     /* ── Table ── */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.83rem; }
-    th { text-align: left; padding: 0.6rem 0.75rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); }
-    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.83rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    th { text-align: left; padding: 0.6rem 0.75rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); min-width: 120px; }
+    td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); min-width: 120px; }
     td:first-child { color: var(--text); font-family: monospace; font-size: 0.8rem; }
 
     /* ── Callout ── */
