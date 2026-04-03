@@ -985,6 +985,20 @@ public ResponseEntity&lt;Account&gt; getAccount(
     <p>Ingredients without a <code>proxy-url</code> (and no recipe-level default) dispatch locally through the Spring MVC chain. You can mix both in the same recipe — some controllers in-process, others proxied to external services.</p>
 
     <div class="callout" style="border-left-color: var(--warning);"><strong>Proxy errors return 502.</strong> If the external service is unreachable or returns a non-parseable response, the ingredient result will have <code>status: 502</code> with <code>{"error": "ProxyError", "message": "..."}</code>.</div>
+
+    <h3 style="margin-top: 1.5rem;">Custom RestClient</h3>
+    <p>All proxy-dispatched ingredients use a single <code>bffRestClient</code> bean. The library creates a bare default — override it when your downstream services require request signing, mTLS, or custom timeouts:</p>
+    <div class="code-block">
+      <div class="code-header"><span>Request signing example</span><span class="lang">java</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code class="language-java">@Bean
+@Qualifier("bffRestClient")
+public RestClient bffRestClient() {
+    return RestClient.builder()
+        .requestInterceptor(new AwsSigV4Interceptor(credentialsProvider))
+        .build();
+}</code></pre>
+    </div>
+    <p style="font-size: 0.82rem; color: var(--muted);">The default bean is <code>@ConditionalOnMissingBean(name = "bffRestClient")</code> — yours takes precedence. This covers AWS SigV4, HMAC signing, mTLS client certificates, connect/read timeouts, and any other <code>ClientHttpRequestInterceptor</code> you need. Note: all proxy ingredients share this single client — if different services need different credentials, you'll need a signing interceptor that selects credentials based on the request URL.</p>
   </section>
 
   <hr class="divider" />
