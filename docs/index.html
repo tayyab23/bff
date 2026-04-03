@@ -423,21 +423,48 @@
       .card-grid { grid-template-columns: 1fr; }
     }
 
-    /* ── Latency comparison ── */
-    .latency-compare { display: flex; flex-direction: column; gap: 1.5rem; margin: 1.5rem 0; }
-    .latency-scenario { border-radius: 10px; padding: 1.25rem; overflow-x: auto; }
-    .latency-label { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
-    .latency-tag { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; }
-    .latency-tag-slow { background: rgba(239,68,68,0.15); color: #ef4444; }
-    .latency-tag-fast { background: rgba(74,222,128,0.15); color: var(--success); }
-    .latency-rows { display: flex; flex-direction: column; gap: 0.35rem; }
-    .latency-row { display: flex; align-items: center; height: 26px; }
-    .latency-row-label { font-size: 0.72rem; color: var(--muted); width: 140px; flex-shrink: 0; text-align: right; padding-right: 0.75rem; }
-    .latency-track { flex: 1; position: relative; height: 22px; }
-    .latency-bar { position: absolute; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; color: #fff; font-weight: 600; white-space: nowrap; }
-    .latency-total { margin-top: 0.75rem; font-size: 0.85rem; color: var(--muted); text-align: right; }
-    .latency-total strong { color: var(--text); }
-    .latency-note { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; font-style: italic; }
+    /* ── Latency comparison (CSS Grid Gantt) ── */
+    .gantt { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 1.5rem; }
+    .gantt-scenario { border-radius: 10px; padding: 1.25rem; }
+    .gantt-header { font-size: 0.85rem; font-weight: 600; color: var(--text); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+    .gantt-tag { font-size: 0.68rem; font-weight: 600; padding: 0.15rem 0.5rem; border-radius: 4px; }
+    .gantt-tag-slow { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .gantt-tag-fast { background: rgba(74,222,128,0.15); color: var(--success); }
+    .gantt-rows { display: flex; flex-direction: column; gap: 4px; }
+    .gantt-row { display: grid; grid-template-columns: 130px 1fr; align-items: center; height: 26px; }
+    .gantt-row .g-label {
+      font-size: 0.72rem; color: var(--muted); text-align: right; padding-right: 0.75rem; white-space: nowrap;
+    }
+    .gantt-row .g-track { position: relative; height: 22px; }
+    .gantt-row .g-bar {
+      position: absolute; height: 22px; border-radius: 3px; display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: #fff; font-weight: 600; white-space: nowrap; min-width: 36px;
+    }
+    .gantt-row .g-bar.net { background: var(--accent); }
+    .gantt-row .g-bar.srv { background: var(--success); }
+    .gantt-row .g-compound {
+      position: absolute; display: flex; height: 22px; border-radius: 3px; overflow: hidden;
+      border: 2px solid; box-sizing: border-box;
+    }
+    .gantt-row .g-compound.page { border-color: #ef4444; }
+    .gantt-row .g-compound.action { border-color: #f59e0b; }
+    .gantt-row .g-compound span {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.6rem; color: #fff; font-weight: 600; height: 100%;
+    }
+    .gantt-sep { border-top: 1px dashed var(--border); margin: 4px 0; }
+    .gantt-total { margin-top: 0.75rem; font-size: 0.85rem; color: var(--muted); text-align: right; }
+    .gantt-total strong { color: var(--text); }
+    .gantt-note { font-size: 0.75rem; color: var(--muted); margin-top: 0.5rem; font-style: italic; }
+    @media (max-width: 768px) {
+      .gantt-row { grid-template-columns: 100px 1fr; }
+      .gantt-row .g-label { font-size: 0.62rem; padding-right: 0.4rem; }
+      .gantt-row .g-bar, .gantt-row .g-compound span { font-size: 0.5rem; }
+    }
+    @media (max-width: 480px) {
+      .gantt-row { grid-template-columns: 70px 1fr; }
+      .gantt-row .g-label { font-size: 0.55rem; }
+    }
 
   </style>
   <!-- Google tag (gtag.js) -->
@@ -565,107 +592,112 @@ public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
     <h3 id="latency" style="margin-top: 2rem; margin-bottom: 1rem; color: var(--text);">Example of client-side latency</h3>
     <p>A payments page needs account info, invoices, and payment methods. Assume 700ms network latency per round trip and 100ms server processing. A good frontend team will parallelize what it can — but the dependency chain still forces sequential hops:</p>
 
-    <div class="latency-compare">
+    <div class="gantt">
       <div style="display:flex; gap:1.25rem; font-size:0.75rem; color:var(--muted); margin-bottom:0.25rem; flex-wrap:wrap;">
         <span><span style="display:inline-block; width:12px; height:12px; border-radius:2px; background:var(--accent); vertical-align:middle; margin-right:4px;"></span>Network latency</span>
         <span><span style="display:inline-block; width:12px; height:12px; border-radius:2px; background:var(--success); vertical-align:middle; margin-right:4px;"></span>Server processing</span>
         <span><span style="display:inline-block; width:12px; height:12px; border-radius:2px; border:2px solid #ef4444; box-sizing:border-box; vertical-align:middle; margin-right:4px;"></span>Page load</span>
         <span><span style="display:inline-block; width:12px; height:12px; border-radius:2px; border:2px solid #f59e0b; box-sizing:border-box; vertical-align:middle; margin-right:4px;"></span>User action</span>
       </div>
-      <div class="latency-scenario latency-before">
-        <div class="latency-label">Without bff-recipe <span class="latency-tag latency-tag-slow">3 round trips, best case</span></div>
-        <div class="latency-rows">
-          <div class="latency-row">
-            <span class="latency-row-label">getAccount</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:0; width:25%; background:transparent; border:2px solid #ef4444; box-sizing:border-box; overflow:hidden; gap:0; padding:0;">
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
-                <span style="flex:0 0 12.5%; background:var(--success); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">100ms</span>
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
+
+      <!-- WITHOUT: each round trip = 25% of track. getAccount 0-25%, getInvoices/getPM 25-50%, submitPayment 50-75% -->
+      <div class="gantt-scenario panel">
+        <div class="gantt-header">Without bff-recipe <span class="gantt-tag gantt-tag-slow">3 round trips, best case</span></div>
+        <div class="gantt-rows">
+          <div class="gantt-row">
+            <span class="g-label">getAccount</span>
+            <div class="g-track">
+              <div class="g-compound page" style="left:0; width:33%;">
+                <span style="flex:7; background:var(--accent);">350ms</span>
+                <span style="flex:2; background:var(--success);">100ms</span>
+                <span style="flex:7; background:var(--accent);">350ms</span>
               </div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">getInvoices</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:25%; width:25%; background:transparent; border:2px solid #ef4444; box-sizing:border-box; overflow:hidden; gap:0; padding:0;">
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
-                <span style="flex:0 0 12.5%; background:var(--success); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">100ms</span>
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
+          <div class="gantt-row">
+            <span class="g-label">getInvoices</span>
+            <div class="g-track">
+              <div class="g-compound page" style="left:33%; width:33%;">
+                <span style="flex:7; background:var(--accent);">350ms</span>
+                <span style="flex:2; background:var(--success);">100ms</span>
+                <span style="flex:7; background:var(--accent);">350ms</span>
               </div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">getPaymentMethods</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:25%; width:25%; background:transparent; border:2px solid #ef4444; box-sizing:border-box; overflow:hidden; gap:0; padding:0;">
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
-                <span style="flex:0 0 12.5%; background:var(--success); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">100ms</span>
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
+          <div class="gantt-row">
+            <span class="g-label">getPaymentMethods</span>
+            <div class="g-track">
+              <div class="g-compound page" style="left:33%; width:33%;">
+                <span style="flex:7; background:var(--accent);">350ms</span>
+                <span style="flex:2; background:var(--success);">100ms</span>
+                <span style="flex:7; background:var(--accent);">350ms</span>
               </div>
             </div>
           </div>
-          <div class="latency-row" style="margin-top: 0.5rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
-            <span class="latency-row-label">submitPayment</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:50%; width:25%; background:transparent; border:2px solid #f59e0b; box-sizing:border-box; overflow:hidden; gap:0; padding:0;">
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
-                <span style="flex:0 0 12.5%; background:var(--success); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">100ms</span>
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
+          <div class="gantt-sep"></div>
+          <div class="gantt-row">
+            <span class="g-label">submitPayment</span>
+            <div class="g-track">
+              <div class="g-compound action" style="left:66%; width:33%;">
+                <span style="flex:7; background:var(--accent);">350ms</span>
+                <span style="flex:2; background:var(--success);">100ms</span>
+                <span style="flex:7; background:var(--accent);">350ms</span>
               </div>
             </div>
           </div>
         </div>
-        <div class="latency-total">Page load: <strong>1,600ms</strong> + 800ms user action</div>
-        <div class="latency-note">A smart frontend parallelizes getInvoices and getPaymentMethods — but both need getAccount first. That's 2 sequential round trips the client can't avoid, plus a third for the payment submission.</div>
+        <div class="gantt-total">Page load: <strong>1,600ms</strong> + 800ms user action</div>
+        <div class="gantt-note">A smart frontend parallelizes getInvoices and getPaymentMethods — but both need getAccount first. That's 2 sequential round trips the client can't avoid, plus a third for the payment submission.</div>
       </div>
 
-      <div class="latency-scenario latency-after">
-        <div class="latency-label">With bff-recipe <span class="latency-tag latency-tag-fast">1 round trip + 1 user action</span></div>
-        <div class="latency-rows">
-          <div class="latency-row">
-            <span class="latency-row-label">network ↗</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:0; width:18%; background:var(--accent);">350ms</div>
+      <!-- WITH: net=20%, srv=8%. network↗ 0-20, getAccount 20-28, parallel 28-36, network↙ 36-56, submitPayment 56-89 -->
+      <div class="gantt-scenario panel">
+        <div class="gantt-header">With bff-recipe <span class="gantt-tag gantt-tag-fast">1 round trip + 1 user action</span></div>
+        <div class="gantt-rows">
+          <div class="gantt-row">
+            <span class="g-label">network ↗</span>
+            <div class="g-track">
+              <div class="g-bar net" style="left:0; width:20%;">350ms</div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">getAccount</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:18%; width:3.5%; background:var(--success);">100ms</div>
+          <div class="gantt-row">
+            <span class="g-label">getAccount</span>
+            <div class="g-track">
+              <div class="g-bar srv" style="left:20%; width:8%;">100ms</div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">getInvoices</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:21.5%; width:3.5%; background:var(--success);">∥ 100ms</div>
+          <div class="gantt-row">
+            <span class="g-label">getInvoices</span>
+            <div class="g-track">
+              <div class="g-bar srv" style="left:28%; width:8%;">∥ 100ms</div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">getPaymentMethods</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:21.5%; width:3.5%; background:var(--success);">∥ 100ms</div>
+          <div class="gantt-row">
+            <span class="g-label">getPaymentMethods</span>
+            <div class="g-track">
+              <div class="g-bar srv" style="left:28%; width:8%;">∥ 100ms</div>
             </div>
           </div>
-          <div class="latency-row">
-            <span class="latency-row-label">network ↙</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:25%; width:18%; background:var(--accent);">350ms</div>
+          <div class="gantt-row">
+            <span class="g-label">network ↙</span>
+            <div class="g-track">
+              <div class="g-bar net" style="left:36%; width:20%;">350ms</div>
             </div>
           </div>
-          <div class="latency-row" style="margin-top: 0.5rem; border-top: 1px dashed var(--border); padding-top: 0.5rem;">
-            <span class="latency-row-label">submitPayment</span>
-            <div class="latency-track">
-              <div class="latency-bar" style="left:43%; width:25%; background:transparent; border:2px solid #f59e0b; box-sizing:border-box; overflow:hidden; gap:0; padding:0;">
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
-                <span style="flex:0 0 12.5%; background:var(--success); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">100ms</span>
-                <span style="flex:0 0 43.75%; background:var(--accent); height:100%; display:flex; align-items:center; justify-content:center; font-size:0.6rem;">350ms</span>
+          <div class="gantt-sep"></div>
+          <div class="gantt-row">
+            <span class="g-label">submitPayment</span>
+            <div class="g-track">
+              <div class="g-compound action" style="left:56%; width:33%;">
+                <span style="flex:7; background:var(--accent);">350ms</span>
+                <span style="flex:2; background:var(--success);">100ms</span>
+                <span style="flex:7; background:var(--accent);">350ms</span>
               </div>
             </div>
           </div>
         </div>
-        <div class="latency-total">Page load: <strong>900ms</strong> + 800ms user action <span style="color: var(--success); font-weight: 700; margin-left: 0.5rem;">— 45% faster</span></div>
-        <div class="latency-note">Same 4 APIs, same dependency chain — but the sequential hops happen server-side with zero network cost. The client pays for one round trip to load the page, plus one for the user-initiated payment.</div>
+        <div class="gantt-total">Page load: <strong>900ms</strong> + 800ms user action <span style="color: var(--success); font-weight: 700; margin-left: 0.5rem;">— 45% faster</span></div>
+        <div class="gantt-note">Same 4 APIs, same dependency chain — but the sequential hops happen server-side with zero network cost. The client pays for one round trip to load the page, plus one for the user-initiated payment.</div>
       </div>
     </div>
 
@@ -1615,8 +1647,8 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
     <p>These are deliberate constraints, not missing features. Each one keeps the library simple and the aggregation layer free of business logic.</p>
 
     <details>
-      <summary>Why no array iteration / <code>$foreach</code>?</summary>
-      <p>That's the N+1 anti-pattern. Array operators (<code>[*]</code>, <code>[?filter]</code>, <code>[start:end]</code>) collect values into a single list for one batch call — they never fan out into N separate calls. If you need to call an API per item, build a batch endpoint.</p>
+      <summary>Why can't I call an API once per item in a response?</summary>
+      <p>That's the N+1 anti-pattern — if <code>getOrders</code> returns 50 items, fanning out to 50 <code>getOrderDetail</code> calls defeats the purpose of aggregation. Array operators (<code>[*]</code>, <code>[?filter]</code>, <code>[start:end]</code>) collect values into a single list for one batch call. If you need per-item data, build a batch endpoint that accepts a list of IDs and returns all results in one response.</p>
     </details>
 
     <details>
