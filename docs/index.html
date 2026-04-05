@@ -119,7 +119,7 @@
       transition: margin-left 0.3s ease, width 0.3s ease;
     }
 
-    section { padding-top: 4rem; margin-top: -2rem; }
+    section { padding-top: 4rem; margin-top: -2rem; max-width: 900px; }
     [id] { scroll-margin-top: 2rem; }
 
     h1 { font-size: 2.4rem; font-weight: 800; letter-spacing: -0.03em; line-height: 1.2; margin-bottom: 1rem; }
@@ -290,12 +290,16 @@
     }
     .steps li .step-body h3 { margin-bottom: 0.25rem; }
     .steps li .step-body p { font-size: 0.85rem; margin: 0; }
+    .steps li .step-body { min-width: 0; flex: 1; }
 
     /* ── Table ── */
-    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.83rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1.5rem; font-size: 0.83rem; }
     th { text-align: left; padding: 0.6rem 0.75rem; color: var(--muted); font-weight: 600; border-bottom: 1px solid var(--border); min-width: 120px; }
     td { padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--border); color: var(--muted); min-width: 120px; }
     td:first-child { color: var(--text); font-family: monospace; font-size: 0.8rem; }
+    @media (max-width: 768px) {
+      table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    }
 
     /* ── Callout ── */
     .callout {
@@ -309,6 +313,15 @@
       color: var(--muted);
     }
     .callout strong { color: var(--text); }
+    .callout-warning { border-left-color: var(--warning); }
+    .callout-info { border-left-color: var(--accent-light); }
+
+    /* ── Anti-pattern panel ── */
+    .anti-panel { border-left: 3px solid var(--accent-light); padding-left: 1rem; }
+
+    /* ── Section heading ── */
+    .sh { margin-top: 1.5rem; }
+    .anti-heading { margin-top: 1.5rem; color: var(--accent-light); }
 
     /* ── FAQ ── */
     details {
@@ -351,7 +364,7 @@
     }
     details li strong { color: var(--text); }
 
-    .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; }
+    .divider { border: none; border-top: 1px solid var(--border); margin: 3rem 0; max-width: 900px; }
 
     code:not([class]) {
       background: var(--code-bg);
@@ -492,7 +505,7 @@
 
   <!-- ── OVERVIEW ── -->
   <section id="overview" data-nav data-nav-link="What &amp; Why">
-    <div class="hero-badge">Spring Boot 3.x · Java 17</div>
+    <div class="hero-badge">Spring Boot 3.x · Java 17+</div>
     <h1>bff-recipe</h1>
     <p style="font-size: 1rem; color: var(--muted); margin-top: -0.5rem; margin-bottom: 1.25rem;">A Backend For Frontend aggregation library</p>
     <p class="hero-sub">
@@ -706,66 +719,54 @@ public ResponseEntity&lt;Confirmation&gt; submitPayment(...) { }</code></pre>
     </p>
 
   </section>
-  <section id="quickstart" data-nav="Getting Started">
+  <section id="quickstart" data-nav="Getting Started" data-nav-link="Quick Start">
     <h2>Quick Start</h2>
 
     <ol class="steps">
       <li>
         <div class="step-body">
           <h3>Add the starter to your existing Spring Boot project.</h3>
-        </div>
-      </li>
-    </ol>
-
-    <div class="code-block">
-      <div class="code-header"><span>build.gradle</span><span class="lang">groovy</span></div>
-      <pre><code class="language-groovy">dependencies {
+          <div class="code-block" style="margin-top: 0.75rem;">
+            <div class="code-header"><span>build.gradle</span><span class="lang">groovy</span></div>
+            <pre><code class="language-groovy">dependencies {
     implementation 'io.github.tayyab23:bff-spring-lib:1.2.0'
 }</code></pre>
-    </div>
-
-    <div class="code-block">
-      <div class="code-header"><span>pom.xml</span><span class="lang">xml</span></div>
-      <pre><code class="language-xml">&lt;dependency&gt;
+          </div>
+          <div class="code-block">
+            <div class="code-header"><span>pom.xml</span><span class="lang">xml</span></div>
+            <pre><code class="language-xml">&lt;dependency&gt;
     &lt;groupId&gt;io.github.tayyab23&lt;/groupId&gt;
     &lt;artifactId&gt;bff-spring-lib&lt;/artifactId&gt;
     &lt;version&gt;1.2.0&lt;/version&gt;
 &lt;/dependency&gt;</code></pre>
-    </div>
-
-    <ol class="steps" style="counter-reset: step 1">
+          </div>
+        </div>
+      </li>
       <li>
         <div class="step-body">
           <h3>Annotate any controller.</h3>
-        </div>
-      </li>
-    </ol>
-    <div class="code-block">
-      <div class="code-header"><span class="lang">java</span></div>
-      <pre><code class="language-java">@BffIngredient
+          <div class="code-block" style="margin-top: 0.75rem;">
+            <div class="code-header"><span class="lang">java</span></div>
+            <pre><code class="language-java">@BffIngredient
 @GetMapping("/api/accounts/{accountId}")
 public ResponseEntity&lt;Account&gt; getAccount(@PathVariable String accountId) { ... }</code></pre>
-    </div>
-
-    <ol class="steps" style="counter-reset: step 2">
+          </div>
+        </div>
+      </li>
       <li>
         <div class="step-body">
           <h3>Test your new bff.</h3>
-        </div>
-      </li>
-    </ol>
-    <div class="code-block">
-      <div class="code-header"><span>POST /bff</span><span class="lang">json</span></div>
-      <pre><code class="language-json">{
+          <div class="code-block" style="margin-top: 0.75rem;">
+            <div class="code-header"><span>POST /bff</span><span class="lang">json</span></div>
+            <pre><code class="language-json">{
   "ingredients": [
     { "id": "getAccount", "params": { "accountId": "acc-123" } }
   ]
 }</code></pre>
-    </div>
-
-    <div class="code-block">
-      <div class="code-header"><span>Response — 200 OK</span><span class="lang">json</span></div>
-      <pre><code class="language-json">{
+          </div>
+          <div class="code-block">
+            <div class="code-header"><span>Response — 200 OK</span><span class="lang">json</span></div>
+            <pre><code class="language-json">{
   "executionOrder": ["getAccount"],
   "results": {
     "getAccount": {
@@ -774,11 +775,22 @@ public ResponseEntity&lt;Account&gt; getAccount(@PathVariable String accountId) 
     }
   }
 }</code></pre>
-    </div>
+          </div>
+        </div>
+      </li>
+    </ol>
 
     <div class="callout">
       That's it. <a href="#config" style="color: var(--accent-light);">Configuration</a> is entirely optional.
     </div>
+
+    <h3 class="sh">Compatibility</h3>
+    <table>
+      <tr><th>Requirement</th><th>Versions</th></tr>
+      <tr><td>Spring Boot</td><td>3.0 – 3.4 (any 3.x)</td></tr>
+      <tr><td>Java</td><td>17, 21</td></tr>
+      <tr><td>Spring MVC</td><td>Required (WebFlux not supported)</td></tr>
+    </table>
   </section>
 
   <hr class="divider" />
@@ -823,7 +835,7 @@ data.results.nonExistent;                      // ✗ compile error</code></pre>
   <hr class="divider" />
 
   <!-- ── COMPARISON ── -->
-  <section id="comparison">
+  <section id="comparison" data-nav-link="How It Compares">
     <h2>How it compares</h2>
     <p>There are real alternatives. bff-recipe indexes on <strong>minimum setup cost</strong> and <strong>maximum API delivery speed</strong> — the shortest path from existing REST endpoints to a composed frontend response. Here's an honest look at the trade-offs.</p>
 
@@ -939,6 +951,26 @@ public ResponseEntity&lt;Account&gt; getAccount(
     </table>
 
     <div class="callout"><strong>Pick one.</strong> Set <code>mode: annotation</code> (default) or <code>mode: config</code>. When using config mode, annotations are ignored entirely.</div>
+
+    <h3 class="sh">Config mode properties</h3>
+    <p>Each ingredient in <code>bff-recipe.ingredients</code> supports:</p>
+    <table>
+      <tr><th>Property</th><th>Required</th><th>Description</th></tr>
+      <tr><td>method</td><td>Yes</td><td>HTTP method: <code>GET</code>, <code>POST</code>, <code>PUT</code>, <code>DELETE</code>, <code>PATCH</code></td></tr>
+      <tr><td>path</td><td>Yes</td><td>URL path with Spring-style placeholders: <code>/api/accounts/{accountId}</code></td></tr>
+      <tr><td>proxy-url</td><td>No</td><td>Base URL for external dispatch. Overrides recipe-level <code>proxy-url</code>.</td></tr>
+      <tr><td>forward-headers</td><td>No</td><td>Same as annotation <code>forwardHeaders</code>. Narrows the global/recipe setting.</td></tr>
+      <tr><td>custom-headers</td><td>No</td><td>Same as annotation <code>customHeaders</code>. Narrows the global/recipe setting.</td></tr>
+      <tr><td>header-mapping</td><td>No</td><td>Same as annotation <code>headerMapping</code>. Narrows the global/recipe setting.</td></tr>
+    </table>
+    <p>Each recipe in <code>bff-recipe.recipes</code> supports:</p>
+    <table>
+      <tr><th>Property</th><th>Required</th><th>Description</th></tr>
+      <tr><td>ingredients</td><td>Yes</td><td>List of ingredient names to include in this recipe</td></tr>
+      <tr><td>proxy-url</td><td>No</td><td>Default base URL for all ingredients in this recipe</td></tr>
+      <tr><td>ingredient-timeout-ms</td><td>No</td><td>Per-ingredient timeout, overrides global</td></tr>
+      <tr><td>recipe-timeout-ms</td><td>No</td><td>Whole-recipe timeout, overrides global</td></tr>
+    </table>
   </section>
 
   <hr class="divider" />
@@ -969,7 +1001,7 @@ public ResponseEntity&lt;Account&gt; getAccount(
       ingredients: [getAccount, getInvoices, getShipping]</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">Resolution order</h3>
+    <h3 class="sh">Resolution order</h3>
     <p>Ingredient <code>proxy-url</code> → Recipe <code>proxy-url</code> → local in-process dispatch. Same override chain philosophy as headers — each level narrows.</p>
 
     <table>
@@ -981,12 +1013,12 @@ public ResponseEntity&lt;Account&gt; getAccount(
 
     <div class="callout"><strong>Environment-driven URLs.</strong> Use Spring property placeholders (<code>${ENV_VAR:default}</code>) in <code>proxy-url</code>. Set different values per environment — no code changes, no rebuilds. Works with env vars, Spring profiles, AWS Parameter Store, or any Spring property source.</div>
 
-    <h3 style="margin-top: 1.5rem;">Mixing local and proxy</h3>
+    <h3 class="sh">Mixing local and proxy</h3>
     <p>Ingredients without a <code>proxy-url</code> (and no recipe-level default) dispatch locally through the Spring MVC chain. You can mix both in the same recipe — some controllers in-process, others proxied to external services.</p>
 
-    <div class="callout" style="border-left-color: var(--warning);"><strong>Proxy errors return 502.</strong> If the external service is unreachable or returns a non-parseable response, the ingredient result will have <code>status: 502</code> with <code>{"error": "ProxyError", "message": "..."}</code>.</div>
+    <div class="callout callout-warning"><strong>Proxy errors return 502.</strong> If the external service is unreachable or returns a non-parseable response, the ingredient result will have <code>status: 502</code> with <code>{"error": "ProxyError", "message": "..."}</code>.</div>
 
-    <h3 style="margin-top: 1.5rem;">Custom RestClient</h3>
+    <h3 class="sh">Custom RestClient</h3>
     <p>All proxy-dispatched ingredients use a single <code>bffRestClient</code> bean. The library creates a bare default — override it when your downstream services require request signing, mTLS, or custom timeouts:</p>
     <div class="code-block">
       <div class="code-header"><span>Request signing example</span><span class="lang">java</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
@@ -1008,7 +1040,7 @@ public RestClient bffRestClient() {
     <h2>@BffIngredient</h2>
     <p>Annotation mode details. Place it on any mapped controller method.</p>
 
-    <h3 style="margin-top: 1.5rem;">Annotation attributes</h3>
+    <h3 class="sh">Annotation attributes</h3>
     <table>
       <tr><th>Attribute</th><th>Default</th><th>Description</th></tr>
       <tr><td>recipe</td><td><code>""</code></td><td>Recipe name(s). Empty = default endpoint at <code>POST /bff</code>. Named recipes get <code>POST /bff/{name}</code>.</td></tr>
@@ -1018,7 +1050,7 @@ public RestClient bffRestClient() {
       <tr><td>headerMapping</td><td><code>INHERIT</code></td><td>Whether prior ingredients' response headers can be mapped in.</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">Override chain</h3>
+    <h3 class="sh">Override chain</h3>
     <p>Settings can be specified at multiple levels. Each level can only <strong>narrow</strong> what the level above allows — never widen it.</p>
     <table>
       <tr><th>Setting</th><th>yml (global)</th><th>yml (per-recipe)</th><th>@BffIngredient</th><th>Recipe JSON</th></tr>
@@ -1071,12 +1103,33 @@ public RestClient bffRestClient() {
       blocked-sources: ["Set-Cookie"]</code></pre>
     </div>
     <div class="callout"><strong>Headers are case-insensitive.</strong> <code>"Authorization"</code>, <code>"authorization"</code>, and <code>"AUTHORIZATION"</code> all match. Original casing is preserved when forwarding.</div>
+
+    <h3 class="sh">Debug mode</h3>
+    <p>Set <code>debug.enabled: true</code> in yml and <code>"debug": true</code> in the recipe request. The response includes timing and resolved expressions per ingredient:</p>
+    <div class="code-block">
+      <div class="code-header"><span>debug response (extra fields)</span><span class="lang">json</span><button class="copy-btn" onclick="copyCode(this)">Copy</button></div>
+      <pre><code class="language-json">{
+  "executionOrder": ["getAccount", ["getInvoices", "getPaymentMethods"]],
+  "debug": {
+    "totalMs": 142,
+    "ingredients": {
+      "getAccount":        { "durationMs": 38, "level": 0, "thread": "bff-pool-1" },
+      "getInvoices":       { "durationMs": 91, "level": 1, "thread": "bff-pool-2",
+                             "resolvedExpressions": { "query.billingGroupId": "bg-789" } },
+      "getPaymentMethods": { "durationMs": 67, "level": 1, "thread": "bff-pool-3",
+                             "resolvedExpressions": { "query.customerId": "cust-456" } }
+    }
+  },
+  "results": { ... }
+}</code></pre>
+    </div>
+    <div class="callout callout-warning"><strong>Never enable in production.</strong> Debug output exposes internal timing, thread names, and resolved expression values. Headers listed in <code>mask-headers</code> are redacted with <code>***</code>.</div>
   </section>
 
   <hr class="divider" />
 
   <!-- EXECUTION -->
-  <section id="execution">
+  <section id="execution" data-nav="Runtime" data-nav-link="Execution Model">
     <h2>Execution Model</h2>
     <p>The framework builds a DAG from your recipe, topologically sorts it into levels, and runs each level in parallel.</p>
     <div class="code-block">
@@ -1093,20 +1146,23 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>true</td><td>Abort all remaining. Already-completed results still returned.</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">Thread pool</h3>
+    <h3 class="sh">Thread pool</h3>
     <p>Ingredients within a level run in parallel on a shared fixed thread pool. The pool is shared across all concurrent recipe requests.</p>
     <table>
       <tr><th>parallel-threads</th><th>Behaviour</th></tr>
       <tr><td>10 (default)</td><td>Fixed thread pool with 10 threads. Size for your expected concurrency.</td></tr>
       <tr><td>0</td><td>No thread pool. Ingredients execute sequentially on the request thread. Good for Lambda, debugging, or recipes with 1–2 ingredients.</td></tr>
     </table>
-    <div class="callout" style="border-left-color: var(--warning);"><strong>Sizing matters under load.</strong> With <code>parallel-threads: 10</code>, 10 concurrent recipe requests each with 5 parallel ingredients = 50 tasks competing for 10 threads. Ingredients queue behind unrelated recipes. Size the pool for your peak concurrency, or set to <code>0</code> for sequential execution.</div>
+    <div class="callout callout-warning"><strong>Sizing matters under load.</strong> With <code>parallel-threads: 10</code>, 10 concurrent recipe requests each with 5 parallel ingredients = 50 tasks competing for 10 threads. Ingredients queue behind unrelated recipes. Size the pool for your peak concurrency, or set to <code>0</code> for sequential execution.</div>
+
+    <h3 class="sh">Overhead</h3>
+    <p>The aggregation layer adds ~1–3ms per recipe on top of ingredient execution time. The cost is DAG construction, topological sort, expression resolution, and thread dispatch. For recipes with 2–5 ingredients, the overhead is negligible compared to the network round trips you're eliminating.</p>
   </section>
 
   <hr class="divider" />
 
   <!-- MIDDLEWARE -->
-  <section id="middleware">
+  <section id="middleware" data-nav-link="Middleware">
     <h2>Middleware &amp; Security</h2>
     <p>Every ingredient dispatches through Spring's full MVC pipeline — not a shortcut, not a direct method call. This means your existing middleware applies per-ingredient, automatically:</p>
 
@@ -1133,7 +1189,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
     <h2>Security Model</h2>
     <p>The client controls <em>which</em> ingredients to call and <em>what values</em> to pass via the <code>map</code> block. Here's what that means for security — and why it doesn't escalate privileges.</p>
 
-    <h3 style="margin-top: 1.5rem;">What the client can do</h3>
+    <h3 class="sh">What the client can do</h3>
     <table>
       <tr><th>Action</th><th>Example</th><th>Why it's safe</th></tr>
       <tr><td>Choose which ingredients to call</td><td><code>{"id": "getAccount"}</code></td><td>Only ingredients registered in the recipe via <code>@BffIngredient</code> are callable. Unknown IDs → 400.</td></tr>
@@ -1142,7 +1198,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>Send custom headers</td><td><code>"custom": {"X-Idempotency-Key": "abc"}</code></td><td>Server allowlist controls which custom headers are permitted. Global blocklist always wins.</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">What the client cannot do</h3>
+    <h3 class="sh">What the client cannot do</h3>
     <table>
       <tr><th>Attempt</th><th>Result</th></tr>
       <tr><td>Call an endpoint not annotated with <code>@BffIngredient</code></td><td>400 — ingredient not found in recipe</td></tr>
@@ -1158,7 +1214,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   <hr class="divider" />
 
   <!-- HEADERS -->
-  <section id="headers">
+  <section id="headers" data-nav-link="Header System">
     <h2>Header System</h2>
     <p>Three sources merged per ingredient, in precedence order. Server policy always wins over client intent.</p>
     <table>
@@ -1184,7 +1240,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   <hr class="divider" />
 
   <!-- REQUEST FORMAT -->
-  <section id="request" data-nav="Recipe Format">
+  <section id="request" data-nav="Recipe Format" data-nav-link="Request Format">
     <h2>Request Format</h2>
     <p>Send a <code>POST</code> to <code>/bff/{recipe}</code>. The URL selects the recipe — no need to specify it in the body.</p>
 
@@ -1231,7 +1287,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
 }</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">Request fields &amp; what the server can override</h3>
+    <h3 class="sh">Request fields &amp; what the server can override</h3>
     <table>
       <tr><th>Field</th><th>Type</th><th>Default</th><th>Server can override?</th></tr>
       <tr><td>debug</td><td>boolean</td><td>false</td><td>Yes — ignored if <code>debug.enabled: false</code> in yml</td></tr>
@@ -1251,7 +1307,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   <hr class="divider" />
 
   <!-- EXPRESSIONS -->
-  <section id="expressions">
+  <section id="expressions" data-nav-link="Expressions">
     <h2>Expressions &amp; Mapping</h2>
     <p>Values in the <code>map</code> block are either a <strong>reference</strong> (contains <code>::</code>) or a <strong>literal</strong> (no <code>::</code>).</p>
     <table>
@@ -1270,7 +1326,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
   "body":  { "invoiceId": "getInvoices::body::${items[0].id}", "note": "auto-pay" }
 }</code></pre>
     </div>
-    <div class="callout" style="border-left-color: var(--accent-light);"><strong>Known limitation:</strong> Expression strings like <code>getAccount::body::${billingGroupId}</code> have no IDE support or compile-time validation — a typo silently resolves to <code>null</code> at runtime. Enable the <a href="#discovery" style="color: var(--accent-light);">validate endpoint</a> in dev/staging to catch these before they hit production: <code>bff-recipe.validate.enabled: true</code>.</div>
+    <div class="callout callout-info"><strong>Known limitation:</strong> Expression strings like <code>getAccount::body::${billingGroupId}</code> have no IDE support or compile-time validation — a typo silently resolves to <code>null</code> at runtime. Enable the <a href="#discovery" style="color: var(--accent-light);">validate endpoint</a> in dev/staging to catch these before they hit production: <code>bff-recipe.validate.enabled: true</code>.</div>
   </section>
 
   <hr class="divider" />
@@ -1282,9 +1338,9 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
 
     <div class="callout"><strong>The rule:</strong> Array operators produce a list. That list is passed as-is to the next ingredient. The library never iterates over it to make N separate calls.</div>
 
-    <div class="callout" style="border-left-color: var(--accent-light);"><strong>Proceed with care.</strong> Array operators are powerful — and easy to misuse. Before building complex filter chains, make sure you understand <a href="#anti-patterns" style="color: var(--accent-light);">API anti-patterns</a> that an aggregation layer can accidentally enable. The map block is for <em>wiring</em>, not for replacing proper API design.</div>
+    <div class="callout callout-info"><strong>Proceed with care.</strong> Array operators are powerful — and easy to misuse. Before building complex filter chains, make sure you understand <a href="#anti-patterns" style="color: var(--accent-light);">API anti-patterns</a> that an aggregation layer can accidentally enable. The map block is for <em>wiring</em>, not for replacing proper API design.</div>
 
-    <h3 style="margin-top: 1.5rem;">Operator Reference</h3>
+    <h3 class="sh">Operator Reference</h3>
     <table>
       <tr><th>Category</th><th>Syntax</th><th>Example</th><th>Result</th></tr>
       <tr><td>Collect</td><td><code>[*]</code></td><td><code>items[*].id</code></td><td>All values → <code>["inv-1", "inv-2", ...]</code></td></tr>
@@ -1311,7 +1367,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>Nested</td><td><code>[?a.b==value]</code></td><td><code>items[?billing.region==US].id</code></td><td>Dot notation in filter</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">Type Coercion</h3>
+    <h3 class="sh">Type Coercion</h3>
     <p>Filter values are auto-detected:</p>
     <table>
       <tr><th>Value</th><th>Detected As</th></tr>
@@ -1323,7 +1379,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
       <tr><td>Everything else</td><td>String</td></tr>
     </table>
 
-    <h3 style="margin-top: 1.5rem;">Edge Cases</h3>
+    <h3 class="sh">Edge Cases</h3>
     <table>
       <tr><th>Scenario</th><th>Behavior</th></tr>
       <tr><td>Path before bracket is not an array</td><td>Returns <code>null</code></td></tr>
@@ -1335,7 +1391,7 @@ Level 2: [submitPayment]                     ← runs alone (depends on both abo
 
     <div class="callout"><strong>Constraints:</strong> One bracket operator per path segment. No nested wildcards (<code>items[*].lines[*].sku</code>). No chaining (<code>items[?x==1][0:3]</code>). Post-collection field pluck is supported: <code>items[*].id</code> ✓</div>
 
-    <h3 style="margin-top: 1.5rem;">Real-World Example: Order Enrichment</h3>
+    <h3 class="sh">Real-World Example: Order Enrichment</h3>
     <p>A frontend needs an order management dashboard. The backend has three separate systems: an <strong>Order Service</strong> (returns 100 orders), a <strong>Fulfillment Service</strong> (batch shipping status), and a <strong>Payment Service</strong> (batch payment status). Each downstream system only needs a <em>subset</em> of the orders.</p>
 
     <div class="code-block">
@@ -1376,7 +1432,7 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
 
     <p>One network round trip. Three systems queried. Array operators handle the subsetting — no client-side filtering, no intermediate APIs, no N+1.</p>
 
-    <h3 style="margin-top: 1.5rem;">More Examples</h3>
+    <h3 class="sh">More Examples</h3>
 
     <div class="code-block">
       <div class="code-header"><span>collect all IDs</span><span class="lang">json</span></div>
@@ -1413,7 +1469,7 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
   <hr class="divider" />
 
   <!-- RESPONSE -->
-  <section id="response">
+  <section id="response" data-nav-link="Response Format">
     <h2>Response Format</h2>
     <table>
       <tr><th>HTTP Status</th><th>Meaning</th></tr>
@@ -1438,7 +1494,7 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
   <hr class="divider" />
 
   <!-- ERRORS -->
-  <section id="errors">
+  <section id="errors" data-nav-link="Error Handling">
     <h2>Error Handling</h2>
     <table>
       <tr><th>Scenario</th><th>Status</th><th>Meaning</th></tr>
@@ -1448,12 +1504,40 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
       <tr><td>Circular dependency</td><td>400</td><td>Cycle path shown in error message</td></tr>
       <tr><td>Too many ingredients</td><td>400</td><td>Exceeds <code>max-ingredients</code> limit</td></tr>
     </table>
+
+    <div class="code-block">
+      <div class="code-header"><span>400 — circular dependency</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "error": "CyclicDependency",
+  "message": "Cycle detected: getInvoices → submitPayment → getInvoices"
+}</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>400 — unknown ingredient</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "error": "UnknownIngredient",
+  "message": "Ingredient 'nonExistent' is not registered in recipe 'payments'"
+}</code></pre>
+    </div>
+
+    <div class="code-block">
+      <div class="code-header"><span>207 — mixed results (partial failure)</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "executionOrder": ["getAccount", ["getInvoices", "getPaymentMethods"]],
+  "results": {
+    "getAccount":        { "status": 200, "body": { "accountId": "acc-123" } },
+    "getInvoices":       { "status": 500, "body": { "error": "InternalServerError" } },
+    "getPaymentMethods": { "status": 200, "body": { "methods": [...] } }
+  }
+}</code></pre>
+    </div>
   </section>
 
   <hr class="divider" />
 
   <!-- TS TYPES -->
-  <section id="ts-types">
+  <section id="ts-types" data-nav="Integrations" data-nav-link="TypeScript Types">
     <h2>TypeScript Types</h2>
     <p><code>@bff-recipe/types</code> gives you compile-time safety for recipe requests and responses. It ships only type definitions — <strong>zero bytes</strong> added to your runtime bundle via <code>import type</code>. Use it with whatever HTTP client you already have.</p>
 
@@ -1462,7 +1546,7 @@ Level 1: [batchGetShipping, batchGetPayments]     ← run in parallel
       <pre><code class="language-bash">npm install @bff-recipe/types --save-dev</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">With Axios</h3>
+    <h3 class="sh">With Axios</h3>
     <div class="code-block">
       <div class="code-header"><span>typed BFF call</span><span class="lang">typescript</span></div>
       <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/types';
@@ -1488,7 +1572,7 @@ data.results.getInvoices.body.items[0].amount; // ✓ number
 data.results.nonExistent;                      // ✗ compile error</code></pre>
     </div>
 
-    <h3 style="margin-top: 1.5rem;">With fetch</h3>
+    <h3 class="sh">With fetch</h3>
     <div class="code-block">
       <div class="code-header"><span>plain fetch</span><span class="lang">typescript</span></div>
       <pre><code class="language-typescript">import type { RecipeRequest, RecipeResponse } from '@bff-recipe/types';
@@ -1509,7 +1593,7 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
   <hr class="divider" />
 
   <!-- DISCOVERY -->
-  <section id="discovery">
+  <section id="discovery" data-nav-link="Discovery Endpoints">
     <h2>Discovery Endpoints</h2>
     <p>Both disabled by default. Enable per environment — they're protected by your existing Spring Security config.</p>
     <div class="code-block">
@@ -1532,12 +1616,20 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
   ]
 }</code></pre>
     </div>
+    <div class="code-block">
+      <div class="code-header"><span>POST /bff/payments/validate — on success</span><span class="lang">json</span></div>
+      <pre><code class="language-json">{
+  "valid": true,
+  "errors": []
+}</code></pre>
+    </div>
+    <p style="font-size: 0.85rem; color: var(--muted);">Validate checks: ingredient IDs exist in the recipe, no circular dependencies, <code>::</code> expressions reference valid ingredient names, and <code>dependsOn</code> targets exist. It does <strong>not</strong> execute the recipe or call any APIs.</p>
   </section>
 
   <hr class="divider" />
 
   <!-- OBSERVABILITY -->
-  <section id="observability">
+  <section id="observability" data-nav-link="Observability">
     <h2>Observability</h2>
     <p>Zero config. Auto-activates when the relevant library is on the classpath.</p>
     <table>
@@ -1546,12 +1638,27 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
       <tr><td>Tracing</td><td>micrometer-tracing or OTel</td><td>Parent span per recipe, child span per ingredient with recipe/status attributes</td></tr>
       <tr><td>Health</td><td>spring-boot-actuator</td><td><code>GET /actuator/health</code> → <code>bffRecipe: UP</code> with recipe + ingredient counts</td></tr>
     </table>
+
+    <h3 class="sh">Logging</h3>
+    <p>The library logs under <code>io.github.tayyab23.bff</code>. Useful levels:</p>
+    <table>
+      <tr><th>Level</th><th>What you see</th></tr>
+      <tr><td>INFO</td><td>Startup: registered recipes and ingredient counts</td></tr>
+      <tr><td>DEBUG</td><td>Per-request: DAG levels, resolved expressions, dispatch targets</td></tr>
+      <tr><td>TRACE</td><td>Per-ingredient: full request/response headers, body summaries, timing</td></tr>
+    </table>
+    <div class="code-block">
+      <div class="code-header"><span>application.yml</span><span class="lang">yaml</span></div>
+      <pre><code class="language-yaml">logging:
+  level:
+    io.github.tayyab23.bff: DEBUG</code></pre>
+    </div>
   </section>
 
   <hr class="divider" />
 
   <!-- EXAMPLE APP -->
-  <section id="example">
+  <section id="example" data-nav-link="Example App">
     <h2>Example App</h2>
     <p>A fully working Spring Boot application demonstrating all patterns — path variables, query params, POST bodies, header forwarding, multi-recipe membership, and mock auth.</p>
     <div class="card-grid">
@@ -1593,62 +1700,62 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
   <hr class="divider" />
 
   <!-- ANTI-PATTERNS -->
-  <section id="anti-patterns" data-nav-link="Anti-Patterns">
+  <section id="anti-patterns" data-nav="Reference" data-nav-link="Anti-Patterns">
     <h2>Anti-Patterns</h2>
     <p>An aggregation layer is powerful — and easy to misuse. These are the patterns to avoid, including ones that bff-recipe can accidentally enable if you're not careful.</p>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">One aggregation for all</h3>
+    <h3 class="anti-heading">One aggregation for all</h3>
     <p>One recipe with 10 ingredients that returns everything for every screen. It starts as a convenience and becomes unmaintainable. Different screens need different data — use named recipes (<code>payments</code>, <code>dashboard</code>, <code>checkout</code>) to keep each one focused.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> One recipe per screen or user flow. If two screens share 3 ingredients, that's fine — put those ingredients in both recipes via <code>@BffIngredient(recipe = {"payments", "dashboard"})</code>, and continuously look for opportunities that reduce the scope of aggregations.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Chatty Ingredients</h3>
+    <h3 class="anti-heading">Chatty Ingredients</h3>
     <p>12 ingredients in a recipe where each depends on the previous one. You've moved the waterfall from the client to the server — the latency is the same, you just can't see it anymore. If your DAG is a straight line, your APIs weren't designed for aggregation.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Aim for wide DAGs (many ingredients at the same level running in parallel), not deep chains. If you have a 5-level chain, consider whether some of those APIs should be merged or whether a batch endpoint would collapse the chain.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Business Logic in the Map Block</h3>
+    <h3 class="anti-heading">Business Logic in the Map Block</h3>
     <p>Trying to use array operators as a transformation engine — filtering, slicing, and reshaping data that should be the API's responsibility. The map block moves data between ingredients. If you're writing complex compound filters to work around an API that returns too much, fix the API.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Array operators are for <em>subsetting</em> — picking which items to send to a batch endpoint. If you need to transform, aggregate, or compute derived values, that logic belongs in a controller method.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Skipping Batch Endpoints</h3>
+    <h3 class="anti-heading">Skipping Batch Endpoints</h3>
     <p>You have an API that returns 50 order IDs and another API that accepts one order ID at a time. Don't build 50 ingredients. Build a batch endpoint (<code>POST /api/orders/details</code>) that accepts a list, then use <code>[*]</code> to collect the IDs and pass them in one call.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> If you find yourself wanting N+1, that's a signal to build a batch API. The library intentionally doesn't support iteration — this is the nudge.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Leaking Internal Structure</h3>
+    <h3 class="anti-heading">Leaking Internal Structure</h3>
     <p>Enabling the schema endpoint in production and exposing your internal API paths, parameter names, and response types to the public internet. The schema endpoint is a development tool.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Keep <code>schema.enabled: false</code> and <code>validate.enabled: false</code> in production. Enable them only in dev/staging via environment-specific config.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Ignoring Idempotency on Writes</h3>
+    <h3 class="anti-heading">Ignoring Idempotency on Writes</h3>
     <p>Including a <code>submitPayment</code> ingredient in a recipe without idempotency protection. If the client retries the recipe on a network timeout, the payment gets submitted twice. Every mutating ingredient should support an idempotency key.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Use the custom header system to pass <code>X-Idempotency-Key</code> per ingredient. Your payment controller should already enforce idempotency — the BFF layer just forwards the key.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Premature Normalization</h3>
+    <h3 class="anti-heading">Premature Normalization</h3>
     <p>Refusing to duplicate data across ingredient responses in the name of DRY. An API response is not your source of truth — your database is. If the order detail response needs the customer name embedded, embed it. Don't force the client to join data from two ingredients.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Each ingredient should return everything the client needs from that resource. The recipe layer moves data between ingredients for <em>wiring</em>, not for <em>assembly</em>.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">Synchronous Heavy Lifting</h3>
+    <h3 class="anti-heading">Synchronous Heavy Lifting</h3>
     <p>Putting a long-running operation (report generation, bulk export) as an ingredient. The recipe has a timeout, and a 30-second ingredient blocks the entire recipe. Heavy operations should be async.</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Instead:</strong> Long-running operations should return <code>202 Accepted</code> with a job ID. The client polls separately. Don't put them in a recipe.
     </div>
 
-    <h3 style="margin-top: 1.5rem; color: var(--accent-light);">When You Actually Want SSR</h3>
+    <h3 class="anti-heading">When You Actually Want SSR</h3>
     <p>Your frontend team builds increasingly complex recipes, parses the JSON response, maps it into components, and renders a page — every time. If the end result is always a fully rendered page and not an interactive SPA that manages state, you're doing server-side rendering with extra steps.</p>
     <p>BFF aggregation is the right tool when you have a rich client that needs raw JSON from multiple APIs in one round trip — SPAs, mobile apps, or any client that manages its own state and renders interactively. It's the <em>wrong</em> tool when the real problem is "we want the server to render the page."</p>
-    <div class="panel" style="border-left: 3px solid var(--accent-light); padding-left: 1rem;">
+    <div class="panel anti-panel">
       <strong>Ask your team:</strong> Are we assembling data to power an interactive UI, or are we assembling data to template into HTML? If it's the latter, look at SSR frameworks that render HTML server-side and send it ready to display. No JSON parsing, no client-side assembly, no recipe complexity. bff-recipe solves the aggregation problem, not the rendering problem.
     </div>
   </section>
@@ -1656,7 +1763,7 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
   <hr class="divider" />
 
   <!-- ── FAQ ── -->
-  <section id="faq">
+  <section id="faq" data-nav-link="FAQ">
     <h2>FAQ — Design Decisions</h2>
     <p>These are deliberate constraints, not missing features. Each one keeps the library simple and the aggregation layer free of business logic.</p>
 
@@ -1783,6 +1890,17 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
       setTimeout(() => btn.textContent = 'Copy', 1500);
     });
   }
+
+  // Add copy buttons to all code blocks that don't have one
+  document.querySelectorAll('.code-block .code-header').forEach(header => {
+    if (!header.querySelector('.copy-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'copy-btn';
+      btn.textContent = 'Copy';
+      btn.onclick = function() { copyCode(this); };
+      header.appendChild(btn);
+    }
+  });
 
   // Close drawer on mobile when clicking a nav link
   document.querySelectorAll('#nav-links a').forEach(a => {
