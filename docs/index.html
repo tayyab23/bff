@@ -1639,20 +1639,6 @@ const data: RecipeResponse&lt;PaymentsPage&gt; = await res.json();</code></pre>
       <tr><td>Health</td><td>spring-boot-actuator</td><td><code>GET /actuator/health</code> → <code>bffRecipe: UP</code> with recipe + ingredient counts</td></tr>
     </table>
 
-    <h3 class="sh">Logging</h3>
-    <p>The library logs under <code>io.github.tayyab23.bff</code>. Useful levels:</p>
-    <table>
-      <tr><th>Level</th><th>What you see</th></tr>
-      <tr><td>INFO</td><td>Startup: registered recipes and ingredient counts</td></tr>
-      <tr><td>DEBUG</td><td>Per-request: DAG levels, resolved expressions, dispatch targets</td></tr>
-      <tr><td>TRACE</td><td>Per-ingredient: full request/response headers, body summaries, timing</td></tr>
-    </table>
-    <div class="code-block">
-      <div class="code-header"><span>application.yml</span><span class="lang">yaml</span></div>
-      <pre><code class="language-yaml">logging:
-  level:
-    io.github.tayyab23.bff: DEBUG</code></pre>
-    </div>
   </section>
 
   <hr class="divider" />
